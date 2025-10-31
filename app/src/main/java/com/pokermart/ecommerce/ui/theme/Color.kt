@@ -1,4 +1,4 @@
-package com.example.pokemart.ui.theme
+package com.pokermart.ecommerce.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
