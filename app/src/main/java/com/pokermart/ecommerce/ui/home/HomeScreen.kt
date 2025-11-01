@@ -23,6 +23,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -61,6 +62,7 @@ fun HomeScreen(
     state: HomeUiState,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit,
     onCategoryClick: (CategoryItem) -> Unit,
     onProductClick: (ProductItem) -> Unit,
@@ -81,6 +83,7 @@ fun HomeScreen(
                 address = state.address,
                 onSearchChange = onSearchChange,
                 onBellClick = onBellClick,
+                onProfileClick = onProfileClick,
                 onChangeAddress = onChangeAddress
             )
         },
@@ -126,6 +129,7 @@ private fun HomeTopBar(
     address: String,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit
 ) {
     Column {
@@ -148,6 +152,12 @@ private fun HomeTopBar(
                 )
             },
             actions = {
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Ir al perfil"
+                    )
+                }
                 IconButton(onClick = onBellClick) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
@@ -373,13 +383,15 @@ fun HomeRoute(
     viewModel: HomeViewModel,
     onChangeAddress: () -> Unit = {},
     onCategoryClick: (CategoryItem) -> Unit = {},
-    onProductClick: (ProductItem) -> Unit = {}
+    onProductClick: (ProductItem) -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val state = viewModel.uiState
     HomeScreen(
         state = state,
         onSearchChange = viewModel::onSearchChange,
         onBellClick = viewModel::onBellClick,
+        onProfileClick = onProfileClick,
         onChangeAddress = {
             viewModel.onChangeAddress()
             onChangeAddress()

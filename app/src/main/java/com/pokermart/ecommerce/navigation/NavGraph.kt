@@ -94,6 +94,12 @@ fun NavGraph(
                     navController.navigate(
                         Destino.OpcionesProducto.crearRuta(producto.id)
                     )
+                },
+                onProfileClick = {
+                    val usuarioId = sessionManager.obtenerSesion()?.id
+                    if (usuarioId != null) {
+                        navController.navigate(Destino.Perfil.crearRuta(usuarioId))
+                    }
                 }
             )
         }
