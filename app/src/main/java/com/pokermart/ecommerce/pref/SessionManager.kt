@@ -13,6 +13,13 @@ class SessionManager(contexto: Context) {
             putLong(LLAVE_ID, usuario.id)
             putString(LLAVE_NOMBRE, usuario.nombre)
             putString(LLAVE_CORREO, usuario.correo)
+            putString(LLAVE_APELLIDO, usuario.apellido)
+            putString(LLAVE_REGION, usuario.region)
+            putString(LLAVE_COMUNA, usuario.comuna)
+            putString(LLAVE_DIRECCION, usuario.direccion)
+            putString(LLAVE_RUN, usuario.run)
+            putString(LLAVE_FECHA_NACIMIENTO, usuario.fechaNacimiento)
+            putString(LLAVE_FOTO_LOCAL, usuario.fotoLocal)
         }
     }
 
@@ -26,7 +33,14 @@ class SessionManager(contexto: Context) {
         return Usuario(
             id = id,
             nombre = nombre,
-            correo = correo
+            correo = correo,
+            apellido = preferencias.getString(LLAVE_APELLIDO, null),
+            region = preferencias.getString(LLAVE_REGION, null),
+            comuna = preferencias.getString(LLAVE_COMUNA, null),
+            direccion = preferencias.getString(LLAVE_DIRECCION, null),
+            run = preferencias.getString(LLAVE_RUN, null),
+            fechaNacimiento = preferencias.getString(LLAVE_FECHA_NACIMIENTO, null),
+            fotoLocal = preferencias.getString(LLAVE_FOTO_LOCAL, null)
         )
     }
 
@@ -41,6 +55,13 @@ class SessionManager(contexto: Context) {
         const val LLAVE_ID = "usuario_id"
         const val LLAVE_NOMBRE = "usuario_nombre"
         const val LLAVE_CORREO = "usuario_correo"
+        const val LLAVE_APELLIDO = "usuario_apellido"
+        const val LLAVE_REGION = "usuario_region"
+        const val LLAVE_COMUNA = "usuario_comuna"
+        const val LLAVE_DIRECCION = "usuario_direccion"
+        const val LLAVE_RUN = "usuario_run"
+        const val LLAVE_FECHA_NACIMIENTO = "usuario_fecha_nacimiento"
+        const val LLAVE_FOTO_LOCAL = "usuario_foto_local"
         const val VALOR_INVALIDO = -1L
     }
 }

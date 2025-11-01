@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import com.pokermart.ecommerce.ui.common.TarjetaCategoria
 fun CategoriesScreen(
     viewModel: CategoriesViewModel,
     onCategoriaSeleccionada: (Categoria) -> Unit,
+    onPerfilClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsState()
@@ -43,6 +45,12 @@ fun CategoriesScreen(
             TopAppBar(
                 title = { Text("Categorias") },
                 actions = {
+                    IconButton(onClick = onPerfilClick) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Ir a tu perfil"
+                        )
+                    }
                     IconButton(onClick = viewModel::refrescar) {
                         Icon(
                             imageVector = Icons.Default.Refresh,

@@ -23,6 +23,10 @@ import com.pokermart.ecommerce.ui.products.ARG_CATEGORIA_NOMBRE
 import com.pokermart.ecommerce.ui.products.ARG_PRODUCTO_ID
 import com.pokermart.ecommerce.ui.products.ProductOptionsViewModel
 import com.pokermart.ecommerce.ui.products.ProductsViewModel
+import com.pokermart.ecommerce.ui.profile.ProfileScreen
+import com.pokermart.ecommerce.ui.profile.ProfileViewModel
+
+private const val ARG_USUARIO_ID = "usuarioId"
 
 sealed class Destino(val ruta: String) {
     data object Login : Destino("login")
@@ -34,6 +38,10 @@ sealed class Destino(val ruta: String) {
 
     data object OpcionesProducto : Destino("opciones/{$ARG_PRODUCTO_ID}") {
         fun crearRuta(productoId: Long): String = "opciones/$productoId"
+    }
+
+    data object Perfil : Destino("perfil/{$ARG_USUARIO_ID}") {
+        fun crearRuta(usuarioId: Long): String = "perfil/$usuarioId"
     }
 }
 
@@ -80,6 +88,12 @@ fun AppNav(
                             categoriaNombre = categoria.nombre
                         )
                     )
+                },
+                onPerfilClick = {
+                    val usuarioId = sessionManager.obtenerSesion()?.id
+                    if (usuarioId != null) {
+                        navController.navigate(Destino.Perfil.crearRuta(usuarioId))
+                    }
                 }
             )
         }
@@ -124,6 +138,29 @@ fun AppNav(
             )
             ProductOptionsScreen(
                 viewModel = opcionesViewModel,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Destino.Perfil.ruta,
+            arguments = listOf(
+                navArgument(ARG_USUARIO_ID) { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getLong(ARG_USUARIO_ID) ?: 0L
+            val profileViewModel = viewModel<ProfileViewModel>(
+                viewModelStoreOwner = backStackEntry,
+                factory = DI.profileViewModelFactory()
+            )
+            ProfileScreen(
+                viewModel = profileViewModel,
+                usuarioId = usuarioId,
+                onCerrarSesion = {
+                    navController.navigate(Destino.Login.ruta) {
+                        popUpTo(0)
+                    }
+                },
                 onVolver = { navController.popBackStack() }
             )
         }

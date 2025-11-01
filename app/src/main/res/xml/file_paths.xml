@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path
+        name="imagenes_externas"
+        path="Pictures/" />
+    <files-path
+        name="imagenes_internas"
+        path="." />
+</paths>

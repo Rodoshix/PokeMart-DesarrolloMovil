@@ -12,6 +12,7 @@ import com.pokermart.ecommerce.ui.categories.CategoriesViewModel
 import com.pokermart.ecommerce.ui.login.LoginViewModel
 import com.pokermart.ecommerce.ui.products.ProductOptionsViewModel
 import com.pokermart.ecommerce.ui.products.ProductsViewModel
+import com.pokermart.ecommerce.ui.profile.ProfileViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,6 +82,16 @@ object DI {
             ProductOptionsViewModel(
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
                 productoId = productoId
+            )
+        }
+    }
+
+    fun profileViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            ProfileViewModel(
+                application = aplicacion,
+                repositorioAutenticacion = obtenerRepositorioAutenticacion(),
+                sessionManager = obtenerGestorSesion()
             )
         }
     }

@@ -1,8 +1,9 @@
 package com.pokermart.ecommerce.data.repository
 
 import com.pokermart.ecommerce.data.dao.UsuarioDao
-import com.pokermart.ecommerce.data.database.entities.UsuarioEntity
 import com.pokermart.ecommerce.data.database.entities.aModelo
+import com.pokermart.ecommerce.data.database.entities.conDatosActualizados
+import com.pokermart.ecommerce.data.database.entities.UsuarioEntity
 import com.pokermart.ecommerce.data.model.Usuario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,4 +38,15 @@ class RepositorioAutenticacion(
             usuarioDao.insertar(nuevoUsuario)
             nuevoUsuario.aModelo()
         }
+
+    suspend fun obtenerUsuarioPorId(id: Long): Usuario? = withContext(Dispatchers.IO) {
+        usuarioDao.obtenerPorId(id)?.aModelo()
+    }
+
+    suspend fun actualizarPerfil(usuario: Usuario): Usuario? = withContext(Dispatchers.IO) {
+        val actual = usuarioDao.obtenerPorId(usuario.id) ?: return@withContext null
+        val actualizado = actual.conDatosActualizados(usuario)
+        usuarioDao.actualizar(actualizado)
+        actualizado.aModelo()
+    }
 }
