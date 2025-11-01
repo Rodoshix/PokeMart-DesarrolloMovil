@@ -12,8 +12,6 @@ import androidx.navigation.navArgument
 import com.pokermart.ecommerce.data.model.Usuario
 import com.pokermart.ecommerce.di.DI
 import com.pokermart.ecommerce.pref.SessionManager
-import com.pokermart.ecommerce.ui.categories.CategoriesScreen
-import com.pokermart.ecommerce.ui.categories.CategoriesViewModel
 import com.pokermart.ecommerce.ui.home.HomeRoute
 import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.login.LoginScreen
@@ -33,7 +31,6 @@ private const val ARG_USUARIO_ID = "usuarioId"
 sealed class Destino(val ruta: String) {
     data object Login : Destino("login")
     data object Home : Destino("home")
-    data object Categorias : Destino("categorias")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
             "productos/$categoriaId/${Uri.encode(categoriaNombre)}"
@@ -87,8 +84,16 @@ fun NavGraph(
                 onChangeAddress = {
                     // Navega a la pantalla de direccion cuando exista
                 },
-                onCategoryClick = {
-                    navController.navigate(Destino.Categorias.ruta)
+                onCategoryClick = { categoria ->
+                    navController.navigate(
+                        Destino.Productos.crearRuta(
+                            categoriaId = categoria.id,
+                            categoriaNombre = categoria.label
+                        )
+                    ) {
+                        launchSingleTop = true
+                        popUpTo(Destino.Home.ruta) { inclusive = false }
+                    }
                 },
                 onProductClick = { producto ->
                     navController.navigate(
@@ -96,29 +101,6 @@ fun NavGraph(
                     )
                 },
                 onProfileClick = {
-                    val usuarioId = sessionManager.obtenerSesion()?.id
-                    if (usuarioId != null) {
-                        navController.navigate(Destino.Perfil.crearRuta(usuarioId))
-                    }
-                }
-            )
-        }
-
-        composable(route = Destino.Categorias.ruta) {
-            val categoriesViewModel = viewModel<CategoriesViewModel>(
-                factory = DI.categoriesViewModelFactory()
-            )
-            CategoriesScreen(
-                viewModel = categoriesViewModel,
-                onCategoriaSeleccionada = { categoria ->
-                    navController.navigate(
-                        Destino.Productos.crearRuta(
-                            categoriaId = categoria.id,
-                            categoriaNombre = categoria.nombre
-                        )
-                    )
-                },
-                onPerfilClick = {
                     val usuarioId = sessionManager.obtenerSesion()?.id
                     if (usuarioId != null) {
                         navController.navigate(Destino.Perfil.crearRuta(usuarioId))
@@ -150,7 +132,7 @@ fun NavGraph(
                         Destino.OpcionesProducto.crearRuta(producto.id)
                     )
                 },
-                onVolver = { navController.popBackStack() }
+                onVolver = { navController.popBackStack(Destino.Home.ruta, false) }
             )
         }
 

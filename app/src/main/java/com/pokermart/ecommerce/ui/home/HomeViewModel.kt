@@ -16,7 +16,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 data class CategoryItem(
-    val id: Int,
+    val id: Long,
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
@@ -58,12 +58,9 @@ class HomeViewModel(
                 "https://nintendosoup.com/wp-content/uploads/2019/02/Pokemon_Sword-Shield-Galar_Map1-1038x576.jpg"
             ),
             categories = listOf(
-                CategoryItem(1, "MTs y DTs", Icons.Outlined.Storefront),
-                CategoryItem(2, "Medicinas", Icons.Outlined.Storefront),
-                CategoryItem(3, "Poke Balls", Icons.Outlined.Storefront),
-                CategoryItem(4, "Envios", Icons.Outlined.LocalShipping),
-                CategoryItem(5, "Favoritos", Icons.Outlined.FavoriteBorder),
-                CategoryItem(6, "Todo", Icons.Outlined.Category)
+                CategoryItem(1L, "Medicinas", Icons.Outlined.Storefront),
+                CategoryItem(2L, "Poke Balls", Icons.Outlined.LocalOffer),
+                CategoryItem(3L, "MTs y DTs", Icons.Outlined.Category)
             ),
             featuredProducts = mockProductos()
         )
@@ -82,7 +79,7 @@ class HomeViewModel(
     }
 
     fun onCategoryClick(category: CategoryItem) {
-        mostrarMensaje("Categoria seleccionada: ${category.label}")
+        // Reservado para futuras acciones (analytics, tracking, etc.)
     }
 
     fun onProductClick(product: ProductItem) {
