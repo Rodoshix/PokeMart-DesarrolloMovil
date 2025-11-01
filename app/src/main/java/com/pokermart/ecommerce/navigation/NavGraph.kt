@@ -14,6 +14,8 @@ import com.pokermart.ecommerce.di.DI
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.categories.CategoriesScreen
 import com.pokermart.ecommerce.ui.categories.CategoriesViewModel
+import com.pokermart.ecommerce.ui.home.HomeRoute
+import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.login.LoginScreen
 import com.pokermart.ecommerce.ui.login.LoginViewModel
 import com.pokermart.ecommerce.ui.products.ProductListScreen
@@ -30,6 +32,7 @@ private const val ARG_USUARIO_ID = "usuarioId"
 
 sealed class Destino(val ruta: String) {
     data object Login : Destino("login")
+    data object Home : Destino("home")
     data object Categorias : Destino("categorias")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
@@ -46,7 +49,7 @@ sealed class Destino(val ruta: String) {
 }
 
 @Composable
-fun AppNav(
+fun NavGraph(
     sessionManager: SessionManager = DI.obtenerGestorSesion()
 ) {
     val navController = rememberNavController()
@@ -54,7 +57,7 @@ fun AppNav(
     val destinoInicial = if (sesion == null) {
         Destino.Login.ruta
     } else {
-        Destino.Categorias.ruta
+        Destino.Home.ruta
     }
 
     NavHost(
@@ -68,9 +71,29 @@ fun AppNav(
             LoginScreen(
                 viewModel = loginViewModel,
                 onLoginExitoso = { _: Usuario ->
-                    navController.navigate(Destino.Categorias.ruta) {
+                    navController.navigate(Destino.Home.ruta) {
                         popUpTo(Destino.Login.ruta) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(route = Destino.Home.ruta) {
+            val homeViewModel = viewModel<HomeViewModel>(
+                factory = DI.homeViewModelFactory()
+            )
+            HomeRoute(
+                viewModel = homeViewModel,
+                onChangeAddress = {
+                    // Navega a la pantalla de direccion cuando exista
+                },
+                onCategoryClick = {
+                    navController.navigate(Destino.Categorias.ruta)
+                },
+                onProductClick = { producto ->
+                    navController.navigate(
+                        Destino.OpcionesProducto.crearRuta(producto.id)
+                    )
                 }
             )
         }

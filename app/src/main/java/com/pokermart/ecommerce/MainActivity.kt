@@ -4,9 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.pokermart.ecommerce.ui.theme.PokeMartTheme
 import com.pokermart.ecommerce.di.DI
-import com.pokermart.ecommerce.navigation.AppNav
+import com.pokermart.ecommerce.navigation.NavGraph
+import com.pokermart.ecommerce.ui.theme.PokeMartTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         DI.inicializar(application)
         setContent {
             PokeMartTheme {
-                AppNav()
+                NavGraph()
             }
         }
     }

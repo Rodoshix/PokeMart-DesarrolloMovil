@@ -9,6 +9,7 @@ import com.pokermart.ecommerce.data.repository.RepositorioAutenticacion
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.categories.CategoriesViewModel
+import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.login.LoginViewModel
 import com.pokermart.ecommerce.ui.products.ProductOptionsViewModel
 import com.pokermart.ecommerce.ui.products.ProductsViewModel
@@ -91,6 +92,14 @@ object DI {
             ProfileViewModel(
                 application = aplicacion,
                 repositorioAutenticacion = obtenerRepositorioAutenticacion(),
+                sessionManager = obtenerGestorSesion()
+            )
+        }
+    }
+
+    fun homeViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            HomeViewModel(
                 sessionManager = obtenerGestorSesion()
             )
         }
