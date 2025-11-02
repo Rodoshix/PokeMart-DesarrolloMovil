@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -146,7 +147,9 @@ fun EnviarAScreen(
                         items(state.direcciones) { direccion ->
                             DireccionItem(
                                 item = direccion,
-                                onSelect = { viewModel.seleccionarPredeterminada(direccion.id) }
+                                onSelect = { viewModel.seleccionarPredeterminada(direccion.id) },
+                                onDelete = { viewModel.solicitarEliminarDireccion(direccion.id) },
+                                eliminarHabilitado = !state.eliminando
                             )
                         }
                     }
@@ -206,12 +209,22 @@ fun EnviarAScreen(
             onSave = viewModel::guardarDireccion
         )
     }
+
+    if (state.confirmacionEliminarId != null) {
+        ConfirmarEliminarDialog(
+            eliminando = state.eliminando,
+            onConfirm = viewModel::confirmarEliminacion,
+            onDismiss = viewModel::cancelarEliminacion
+        )
+    }
 }
 
 @Composable
 private fun DireccionItem(
     item: DireccionItemUi,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    onDelete: () -> Unit,
+    eliminarHabilitado: Boolean
 ) {
     val etiqueta = item.etiqueta?.takeIf { it.isNotBlank() }
     Column(
@@ -255,6 +268,15 @@ private fun DireccionItem(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+            IconButton(
+                onClick = onDelete,
+                enabled = eliminarHabilitado
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar direccion"
+                )
             }
         }
     }
@@ -331,6 +353,36 @@ private fun DireccionDialog(
                     )
                     Text("Marcar como predeterminada")
                 }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ConfirmarEliminarDialog(
+    eliminando: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar direccion") },
+        text = { Text("¿Deseas eliminar esta direccion?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = !eliminando) {
+                if (eliminando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Eliminar")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !eliminando) {
+                Text("Cancelar")
             }
         }
     )

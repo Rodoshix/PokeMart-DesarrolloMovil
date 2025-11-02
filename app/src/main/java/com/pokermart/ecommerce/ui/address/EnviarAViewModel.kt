@@ -71,6 +71,18 @@ class EnviarAViewModel(
         }
     }
 
+    fun solicitarEliminarDireccion(id: Long) {
+        _uiState.update {
+            it.copy(confirmacionEliminarId = id, eliminando = false)
+        }
+    }
+
+    fun cancelarEliminacion() {
+        _uiState.update {
+            it.copy(confirmacionEliminarId = null, eliminando = false)
+        }
+    }
+
     fun prepararFormularioConUbicacion(
         direccion: String,
         latitud: Double?,
@@ -187,6 +199,34 @@ class EnviarAViewModel(
             } catch (ex: Exception) {
                 _uiState.update {
                     it.copy(mensaje = ex.message ?: "No se pudo actualizar la direccion predeterminada.")
+                }
+            }
+        }
+    }
+
+    fun confirmarEliminacion() {
+        val userId = usuarioId ?: run {
+            _uiState.update { it.copy(mensaje = "No se encontro al usuario.", confirmacionEliminarId = null) }
+            return
+        }
+        val direccionId = _uiState.value.confirmacionEliminarId ?: return
+        _uiState.update { it.copy(eliminando = true) }
+        viewModelScope.launch {
+            try {
+                repositorioDirecciones.eliminar(direccionId, userId)
+                _uiState.update {
+                    it.copy(
+                        eliminando = false,
+                        confirmacionEliminarId = null,
+                        mensaje = "Direccion eliminada."
+                    )
+                }
+            } catch (ex: Exception) {
+                _uiState.update {
+                    it.copy(
+                        eliminando = false,
+                        mensaje = ex.message ?: "No se pudo eliminar la direccion."
+                    )
                 }
             }
         }

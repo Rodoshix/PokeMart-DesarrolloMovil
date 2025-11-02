@@ -27,5 +27,7 @@ data class EnviarAUiState(
     val mostrarDialogo: Boolean = false,
     val formulario: DireccionFormState = DireccionFormState(),
     val guardando: Boolean = false,
-    val mensaje: String? = null
+    val mensaje: String? = null,
+    val confirmacionEliminarId: Long? = null,
+    val eliminando: Boolean = false
 )
