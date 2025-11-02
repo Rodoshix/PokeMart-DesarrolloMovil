@@ -6,10 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pokermart.ecommerce.data.dao.CategoriaDao
+import com.pokermart.ecommerce.data.dao.DireccionDao
 import com.pokermart.ecommerce.data.dao.OpcionProductoDao
 import com.pokermart.ecommerce.data.dao.ProductoDao
 import com.pokermart.ecommerce.data.dao.UsuarioDao
 import com.pokermart.ecommerce.data.database.entities.CategoriaEntity
+import com.pokermart.ecommerce.data.database.entities.DireccionEntity
 import com.pokermart.ecommerce.data.database.entities.OpcionProductoEntity
 import com.pokermart.ecommerce.data.database.entities.ProductoEntity
 import com.pokermart.ecommerce.data.database.entities.UsuarioEntity
@@ -21,9 +23,10 @@ import kotlinx.coroutines.launch
         CategoriaEntity::class,
         ProductoEntity::class,
         OpcionProductoEntity::class,
-        UsuarioEntity::class
+        UsuarioEntity::class,
+        DireccionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class PokeMartDatabase : RoomDatabase() {
@@ -32,6 +35,7 @@ abstract class PokeMartDatabase : RoomDatabase() {
     abstract fun productoDao(): ProductoDao
     abstract fun opcionProductoDao(): OpcionProductoDao
     abstract fun usuarioDao(): UsuarioDao
+    abstract fun direccionDao(): DireccionDao
 
     companion object {
         private const val NOMBRE_BD = "poke_mart.db"

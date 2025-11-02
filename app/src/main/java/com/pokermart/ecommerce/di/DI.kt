@@ -7,8 +7,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pokermart.ecommerce.data.database.PokeMartDatabase
 import com.pokermart.ecommerce.data.repository.RepositorioAutenticacion
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
+import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.home.HomeViewModel
+import com.pokermart.ecommerce.ui.address.EnviarAViewModel
 import com.pokermart.ecommerce.ui.login.LoginViewModel
 import com.pokermart.ecommerce.ui.products.ProductOptionsViewModel
 import com.pokermart.ecommerce.ui.products.ProductsViewModel
@@ -34,6 +36,9 @@ object DI {
             productoDao = baseDeDatos.productoDao()
         )
     }
+    private val repositorioDirecciones: RepositorioDirecciones by lazy {
+        RepositorioDirecciones(baseDeDatos.direccionDao())
+    }
 
     fun inicializar(app: Application) {
         if (this::aplicacion.isInitialized) return
@@ -47,6 +52,7 @@ object DI {
     fun obtenerRepositorioAutenticacion(): RepositorioAutenticacion = repositorioAutenticacion
 
     fun obtenerRepositorioCatalogo(): RepositorioCatalogo = repositorioCatalogo
+    fun obtenerRepositorioDirecciones(): RepositorioDirecciones = repositorioDirecciones
 
     internal fun alcanceGlobal(): CoroutineScope = alcanceAplicacion
 
@@ -95,6 +101,16 @@ object DI {
             ProfileViewModel(
                 application = aplicacion,
                 repositorioAutenticacion = obtenerRepositorioAutenticacion(),
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
+                sessionManager = obtenerGestorSesion()
+            )
+        }
+    }
+
+    fun enviarAViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            EnviarAViewModel(
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
                 sessionManager = obtenerGestorSesion()
             )
         }
@@ -104,7 +120,8 @@ object DI {
         initializer {
             HomeViewModel(
                 sessionManager = obtenerGestorSesion(),
-                repositorioCatalogo = obtenerRepositorioCatalogo()
+                repositorioCatalogo = obtenerRepositorioCatalogo(),
+                repositorioDirecciones = obtenerRepositorioDirecciones()
             )
         }
     }

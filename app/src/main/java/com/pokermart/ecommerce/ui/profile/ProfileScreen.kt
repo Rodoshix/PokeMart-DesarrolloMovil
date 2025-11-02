@@ -38,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -72,7 +73,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     usuarioId: Long,
     onCerrarSesion: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onGestionarDirecciones: () -> Unit
 ) {
     val estado = viewModel.estado.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -287,6 +289,12 @@ fun ProfileScreen(
                     label = { Text("Direccion") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                TextButton(
+                    onClick = onGestionarDirecciones,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Administrar direcciones guardadas")
+                }
 
                 OutlinedTextField(
                     value = estado.value.run,

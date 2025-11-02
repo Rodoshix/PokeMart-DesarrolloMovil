@@ -12,6 +12,8 @@ import androidx.navigation.navArgument
 import com.pokermart.ecommerce.data.model.Usuario
 import com.pokermart.ecommerce.di.DI
 import com.pokermart.ecommerce.pref.SessionManager
+import com.pokermart.ecommerce.ui.address.EnviarAScreen
+import com.pokermart.ecommerce.ui.address.EnviarAViewModel
 import com.pokermart.ecommerce.ui.home.HomeRoute
 import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.login.LoginScreen
@@ -34,6 +36,7 @@ sealed class Destino(val ruta: String) {
     data object Login : Destino("login")
     data object Home : Destino("home")
     data object Registro : Destino("registro")
+    data object EnviarA : Destino("enviarA")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
             "productos/$categoriaId/${Uri.encode(categoriaNombre)}"
@@ -106,7 +109,9 @@ fun NavGraph(
             HomeRoute(
                 viewModel = homeViewModel,
                 onChangeAddress = {
-                    // Navega a la pantalla de direccion cuando exista
+                    navController.navigate(Destino.EnviarA.ruta) {
+                        launchSingleTop = true
+                    }
                 },
                 onCategoryClick = { categoria ->
                     navController.navigate(
@@ -130,6 +135,17 @@ fun NavGraph(
                         navController.navigate(Destino.Perfil.crearRuta(usuarioId))
                     }
                 }
+            )
+        }
+
+        composable(route = Destino.EnviarA.ruta) {
+            val enviarAViewModel = viewModel<EnviarAViewModel>(
+                factory = DI.enviarAViewModelFactory()
+            )
+            EnviarAScreen(
+                viewModel = enviarAViewModel,
+                onBack = { navController.popBackStack() },
+                onConfirm = { navController.popBackStack() }
             )
         }
 
@@ -196,7 +212,10 @@ fun NavGraph(
                         popUpTo(0)
                     }
                 },
-                onVolver = { navController.popBackStack() }
+                onVolver = { navController.popBackStack() },
+                onGestionarDirecciones = {
+                    navController.navigate(Destino.EnviarA.ruta)
+                }
             )
         }
     }

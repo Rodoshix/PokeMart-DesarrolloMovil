@@ -8,11 +8,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.pokermart.ecommerce.data.model.Producto
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
+import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -39,7 +43,8 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val sessionManager: SessionManager,
-    repositorioCatalogo: RepositorioCatalogo
+    repositorioCatalogo: RepositorioCatalogo,
+    private val repositorioDirecciones: RepositorioDirecciones
 ) : ViewModel() {
 
     val destacados: Flow<List<ProductItem>> = repositorioCatalogo
@@ -53,12 +58,11 @@ class HomeViewModel(
 
     init {
         cargarEstadoInicial()
+        observarDireccionPredeterminada()
     }
 
     private fun cargarEstadoInicial() {
-        val direccionGuardada = sessionManager.obtenerSesion()?.direccion
         uiState = uiState.copy(
-            address = direccionGuardada?.takeIf { it.isNotBlank() } ?: "Debe ingresar Direccion",
             carouselImages = listOf(
                 "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-scarlet-violet/e/ef/Pokemon_Paldea_Map.jpg",
                 "https://static.wikia.nocookie.net/pokemon/images/f/f8/Sinnoh_BDSP.png/revision/latest?cb=20210818192524",
@@ -72,6 +76,20 @@ class HomeViewModel(
         )
     }
 
+    private fun observarDireccionPredeterminada() {
+        val usuarioId = sessionManager.obtenerSesion()?.id ?: run {
+            uiState = uiState.copy(address = "Debe ingresar Direccion")
+            return
+        }
+        viewModelScope.launch {
+            repositorioDirecciones.observarPredeterminada(usuarioId).collectLatest { direccion ->
+                uiState = uiState.copy(
+                    address = direccion?.direccion ?: "Debe ingresar Direccion"
+                )
+            }
+        }
+    }
+
     fun onSearchChange(query: String) {
         uiState = uiState.copy(searchQuery = query)
     }
@@ -81,7 +99,7 @@ class HomeViewModel(
     }
 
     fun onChangeAddress() {
-        mostrarMensaje("Funcionalidad de direccion en desarrollo.")
+        // La navegacion se maneja en la capa de UI.
     }
 
     fun onCategoryClick(category: CategoryItem) {

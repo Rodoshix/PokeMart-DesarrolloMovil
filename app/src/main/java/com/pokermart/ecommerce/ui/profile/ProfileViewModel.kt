@@ -6,8 +6,10 @@ import android.os.Environment
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.pokermart.ecommerce.data.model.Direccion
 import com.pokermart.ecommerce.data.model.Usuario
 import com.pokermart.ecommerce.data.repository.RepositorioAutenticacion
+import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.utils.Validadores
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,6 +29,7 @@ import kotlin.math.max
 class ProfileViewModel(
     application: Application,
     private val repositorioAutenticacion: RepositorioAutenticacion,
+    private val repositorioDirecciones: RepositorioDirecciones,
     private val sessionManager: SessionManager
 ) : AndroidViewModel(application) {
 
@@ -160,6 +164,13 @@ class ProfileViewModel(
             } else {
                 usuarioActual = resultado
                 sessionManager.guardarSesion(resultado)
+                val direccionTexto = resultado.direccion?.trim().orEmpty()
+                if (direccionTexto.isNotEmpty()) {
+                    sincronizarDireccionPredeterminada(
+                        usuarioId = resultado.id,
+                        direccion = direccionTexto
+                    )
+                }
                 _estado.update {
                     it.copy(
                         guardando = false,
@@ -250,6 +261,29 @@ class ProfileViewModel(
             destino
         } catch (ex: IOException) {
             null
+        }
+    }
+
+    private suspend fun sincronizarDireccionPredeterminada(
+        usuarioId: Long,
+        direccion: String
+    ) {
+        try {
+            val actual = repositorioDirecciones.observarPredeterminada(usuarioId).firstOrNull()
+            val direccionPerfil = Direccion(
+                id = actual?.id ?: 0L,
+                usuarioId = usuarioId,
+                etiqueta = actual?.etiqueta ?: "Perfil",
+                direccion = direccion,
+                referencia = actual?.referencia,
+                latitud = actual?.latitud,
+                longitud = actual?.longitud,
+                esPredeterminada = true,
+                creadoEl = actual?.creadoEl ?: System.currentTimeMillis()
+            )
+            repositorioDirecciones.guardar(direccionPerfil, marcarComoPredeterminada = true)
+        } catch (_: Exception) {
+            // Ignoramos errores de sincronizacion para no interrumpir la actualizacion del perfil.
         }
     }
 
