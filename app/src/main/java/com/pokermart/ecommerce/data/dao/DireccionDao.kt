@@ -34,6 +34,9 @@ interface DireccionDao {
     @Query("SELECT COUNT(*) FROM direccion WHERE usuario_id = :usuarioId AND is_default = 1")
     suspend fun contarPredeterminadas(usuarioId: Long): Int
 
+    @Query("SELECT COUNT(*) FROM direccion")
+    suspend fun contarTotal(): Int
+
     @Query("DELETE FROM direccion WHERE id = :direccionId")
     suspend fun eliminar(direccionId: Long)
 

@@ -1,6 +1,7 @@
 package com.pokermart.ecommerce.data.database
 
 import com.pokermart.ecommerce.data.database.entities.CategoriaEntity
+import com.pokermart.ecommerce.data.database.entities.DireccionEntity
 import com.pokermart.ecommerce.data.database.entities.OpcionProductoEntity
 import com.pokermart.ecommerce.data.database.entities.ProductoEntity
 import com.pokermart.ecommerce.data.database.entities.UsuarioEntity
@@ -13,6 +14,7 @@ object PrecargaDatos {
         insertarCategorias(baseDeDatos)
         insertarProductosYOpciones(baseDeDatos)
         insertarUsuarios(baseDeDatos)
+        insertarDirecciones(baseDeDatos)
     }
 
     private suspend fun insertarCategorias(baseDeDatos: PokeMartDatabase) {
@@ -322,5 +324,33 @@ object PrecargaDatos {
         )
 
         usuarios.forEach { dao.insertar(it) }
+    }
+
+    private suspend fun insertarDirecciones(baseDeDatos: PokeMartDatabase) {
+        val direccionDao = baseDeDatos.direccionDao()
+        if (direccionDao.contarTotal() > 0) return
+
+        val direcciones = listOf(
+            DireccionEntity(
+                usuarioId = 2,
+                etiqueta = "Casa",
+                addressLine = "Ruta 1 sin numero",
+                referencia = "Frente al laboratorio del Profesor Oak",
+                latitud = null,
+                longitud = null,
+                isDefault = true
+            ),
+            DireccionEntity(
+                usuarioId = 3,
+                etiqueta = "Gimnasio",
+                addressLine = "Avenida Cascada 456",
+                referencia = "Gimnasio de Ciudad Celeste",
+                latitud = null,
+                longitud = null,
+                isDefault = true
+            )
+        )
+
+        direcciones.forEach { direccionDao.guardar(it) }
     }
 }

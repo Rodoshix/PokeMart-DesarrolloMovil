@@ -28,7 +28,7 @@ data class DireccionEntity(
     val latitud: Double?,
     val longitud: Double?,
     @ColumnInfo(name = "is_default") val isDefault: Boolean = false,
-    @ColumnInfo(name = "created_at") val createdAt: Long
+    @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis()
 )
 
 fun DireccionEntity.aModelo(): Direccion = Direccion(
