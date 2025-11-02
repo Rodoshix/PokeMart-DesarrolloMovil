@@ -2,16 +2,17 @@ package com.pokermart.ecommerce.ui.home
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.LocalOffer
-import androidx.compose.material.icons.outlined.LocalShipping
-import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.pokermart.ecommerce.data.model.Producto
+import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.pref.SessionManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -24,7 +25,7 @@ data class CategoryItem(
 data class ProductItem(
     val id: Long,
     val title: String,
-    val price: Long,
+    val price: Double,
     val imageUrl: String
 )
 
@@ -33,13 +34,19 @@ data class HomeUiState(
     val address: String = "Los Quillayes 717",
     val carouselImages: List<String> = emptyList(),
     val categories: List<CategoryItem> = emptyList(),
-    val featuredProducts: List<ProductItem> = emptyList(),
     val snackbarMessage: String? = null
 )
 
 class HomeViewModel(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    repositorioCatalogo: RepositorioCatalogo
 ) : ViewModel() {
+
+    val destacados: Flow<List<ProductItem>> = repositorioCatalogo
+        .observarDestacados()
+        .map { productos ->
+            productos.map { it.aProductItem() }
+        }
 
     var uiState by mutableStateOf(HomeUiState())
         private set
@@ -61,8 +68,7 @@ class HomeViewModel(
                 CategoryItem(1L, "Medicinas", Icons.Outlined.Storefront),
                 CategoryItem(2L, "Poke Balls", Icons.Outlined.LocalOffer),
                 CategoryItem(3L, "MTs y DTs", Icons.Outlined.Category)
-            ),
-            featuredProducts = mockProductos()
+            )
         )
     }
 
@@ -94,36 +100,17 @@ class HomeViewModel(
         uiState = uiState.copy(snackbarMessage = mensaje)
     }
 
-    private fun mockProductos(): List<ProductItem> = listOf(
-        ProductItem(
-            id = 100,
-            title = "Poke Ball Premium",
-            price = 5_490,
-            imageUrl = "https://assets.pokemon.com/assets/cms2/img/items/poke-ball.png"
-        ),
-        ProductItem(
-            id = 101,
-            title = "Ultra Ball Pro",
-            price = 11_990,
-            imageUrl = "https://assets.pokemon.com/assets/cms2/img/items/ultra-ball.png"
-        ),
-        ProductItem(
-            id = 102,
-            title = "Superpocion Plus",
-            price = 8_990,
-            imageUrl = "https://assets.pokemon.com/assets/cms2/img/items/super-potion.png"
-        ),
-        ProductItem(
-            id = 103,
-            title = "MT Trueno",
-            price = 24_990,
-            imageUrl = "https://assets.pokemon.com/assets/cms2/img/items/tm.png"
-        )
+    private fun Producto.aProductItem(): ProductItem = ProductItem(
+        id = id,
+        title = nombre,
+        price = precio,
+        imageUrl = imagenUrl
     )
 }
 
-fun formatClp(value: Long): String {
+fun formatClp(value: Double): String {
     val format = NumberFormat.getCurrencyInstance(Locale("es", "CL"))
     format.maximumFractionDigits = 0
+    format.minimumFractionDigits = 0
     return format.format(value)
 }

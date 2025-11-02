@@ -16,6 +16,10 @@ interface ProductoDao {
     @Query("SELECT * FROM productos WHERE categoria_id = :categoriaId ORDER BY nombre")
     fun observarPorCategoria(categoriaId: Long): Flow<List<ProductoConOpciones>>
 
+    @Transaction
+    @Query("SELECT * FROM productos WHERE destacado = 1 ORDER BY id DESC LIMIT 6")
+    fun observarDestacados(): Flow<List<ProductoConOpciones>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodos(productos: List<ProductoEntity>)
 

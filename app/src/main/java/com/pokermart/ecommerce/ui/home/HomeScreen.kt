@@ -44,6 +44,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +62,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     state: HomeUiState,
+    featuredProducts: List<ProductItem>,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -107,17 +110,19 @@ fun HomeScreen(
                 categories = state.categories,
                 onCategoryClick = onCategoryClick
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Destacados",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
-            )
-            ProductGrid(
-                productos = state.featuredProducts,
-                onProductClick = onProductClick,
-                modifier = Modifier.weight(1f, fill = true)
-            )
+            if (featuredProducts.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Destacados",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                )
+                ProductGrid(
+                    productos = featuredProducts,
+                    onProductClick = onProductClick,
+                    modifier = Modifier.weight(1f, fill = true)
+                )
+            }
         }
     }
 }
@@ -387,8 +392,10 @@ fun HomeRoute(
     onProfileClick: () -> Unit = {}
 ) {
     val state = viewModel.uiState
+    val featuredProducts by viewModel.destacados.collectAsState(initial = emptyList())
     HomeScreen(
         state = state,
+        featuredProducts = featuredProducts,
         onSearchChange = viewModel::onSearchChange,
         onBellClick = viewModel::onBellClick,
         onProfileClick = onProfileClick,

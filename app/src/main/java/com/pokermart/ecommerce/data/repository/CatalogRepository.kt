@@ -21,6 +21,11 @@ class RepositorioCatalogo(
             entidades.map { it.aModelo() }
         }
 
+    fun observarDestacados(): Flow<List<Producto>> =
+        productoDao.observarDestacados().map { relaciones ->
+            relaciones.map { it.aModelo() }
+        }
+
     fun observarProductosPorCategoria(categoriaId: Long): Flow<List<Producto>> =
         productoDao.observarPorCategoria(categoriaId).map { relaciones ->
             relaciones.map { it.aModelo() }

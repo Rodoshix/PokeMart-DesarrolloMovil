@@ -93,7 +93,8 @@ object DI {
     fun homeViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
         initializer {
             HomeViewModel(
-                sessionManager = obtenerGestorSesion()
+                sessionManager = obtenerGestorSesion(),
+                repositorioCatalogo = obtenerRepositorioCatalogo()
             )
         }
     }
