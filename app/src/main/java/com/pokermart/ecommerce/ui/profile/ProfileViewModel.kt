@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.util.Locale
+import kotlin.math.max
 
 class ProfileViewModel(
     application: Application,
@@ -62,7 +63,9 @@ class ProfileViewModel(
                         region = usuario.region.orEmpty(),
                         comuna = usuario.comuna.orEmpty(),
                         direccion = usuario.direccion.orEmpty(),
-                        run = usuario.run.orEmpty(),
+                        run = usuario.run?.let { runGuardado ->
+                            formatearRun(limpiarRun(runGuardado))
+                        }.orEmpty(),
                         fechaNacimiento = usuario.fechaNacimiento,
                         correo = usuario.correo,
                         fotoActual = usuario.fotoLocal,
@@ -95,7 +98,8 @@ class ProfileViewModel(
     }
 
     fun actualizarRun(valor: String) {
-        _estado.update { it.copy(run = valor.uppercase(Locale.getDefault()), errorRun = null) }
+        val limpio = limpiarRun(valor)
+        _estado.update { it.copy(run = formatearRun(limpio), errorRun = null) }
     }
 
     fun actualizarFechaNacimiento(fechaIso: String?) {
@@ -110,11 +114,12 @@ class ProfileViewModel(
         val usuarioBase = usuarioActual ?: return
 
         val nombre = _estado.value.nombre.trim()
-        val run = _estado.value.run.trim()
+        val runFormateado = _estado.value.run.trim()
+        val runLimpio = limpiarRun(runFormateado)
         val fechaIso = _estado.value.fechaNacimiento
 
         val errorNombre = Validadores.validarCampoObligatorio(nombre, "nombre")
-        val errorRun = if (run.isNotEmpty()) Validadores.validarRun(run) else null
+        val errorRun = if (runLimpio.isNotEmpty()) Validadores.validarRun(runLimpio) else null
         val errorFecha = Validadores.validarFechaNacimientoIso(fechaIso)
 
         if (errorNombre != null || errorRun != null || errorFecha != null) {
@@ -139,7 +144,7 @@ class ProfileViewModel(
                 region = _estado.value.region.trim().takeIf { it.isNotEmpty() },
                 comuna = _estado.value.comuna.trim().takeIf { it.isNotEmpty() },
                 direccion = _estado.value.direccion.trim().takeIf { it.isNotEmpty() },
-                run = run.ifEmpty { null },
+                run = runLimpio.ifEmpty { null },
                 fechaNacimiento = fechaIso,
                 fotoLocal = _estado.value.fotoActual
             )
@@ -246,5 +251,35 @@ class ProfileViewModel(
         } catch (ex: IOException) {
             null
         }
+    }
+
+    private fun limpiarRun(valor: String): String {
+        val sinPuntuacion = valor.filter { it.isDigit() || it.equals('k', true) }
+        return sinPuntuacion.uppercase(Locale.getDefault())
+    }
+
+    private fun formatearRun(limpio: String): String {
+        if (limpio.isEmpty()) return ""
+        if (limpio.length == 1) return limpio
+        val cuerpo = limpio.dropLast(1)
+        val digito = limpio.last()
+        val cuerpoFormateado = construirCuerpoConPuntos(cuerpo)
+        return "$cuerpoFormateado-$digito"
+    }
+
+    private fun construirCuerpoConPuntos(cuerpo: String): String {
+        if (cuerpo.isEmpty()) return ""
+        val builder = StringBuilder()
+        var indice = cuerpo.length
+        while (indice > 0) {
+            val inicio = max(0, indice - 3)
+            val segmento = cuerpo.substring(inicio, indice)
+            if (builder.isNotEmpty()) {
+                builder.insert(0, '.')
+            }
+            builder.insert(0, segmento)
+            indice = inicio
+        }
+        return builder.toString()
     }
 }

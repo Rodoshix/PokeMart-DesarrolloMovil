@@ -1,6 +1,7 @@
 package com.pokermart.ecommerce.ui.profile
 
 import android.Manifest
+import android.app.DatePickerDialog
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -38,7 +40,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,10 +62,9 @@ import coil.request.ImageRequest
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
 import java.io.File
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,43 +165,42 @@ fun ProfileScreen(
         } ?: "Selecciona"
     }
 
-    var mostrarSelectorFecha by remember { mutableStateOf(false) }
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = fechaIso?.let {
-            runCatching {
-                LocalDate.parse(it).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            }.getOrNull()
-        }
-    )
-
-    if (mostrarSelectorFecha) {
-        androidx.compose.material3.DatePickerDialog(
-            onDismissRequest = { mostrarSelectorFecha = false },
-            confirmButton = {
-                Button(onClick = {
-                    val fechaMillis = datePickerState.selectedDateMillis
-                    if (fechaMillis != null) {
-                        val iso = Instant.ofEpochMilli(fechaMillis)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                            .format(DateTimeFormatter.ISO_DATE)
-                        viewModel.actualizarFechaNacimiento(iso)
-                    }
-                    mostrarSelectorFecha = false
-                }) {
-                    Text("Aceptar")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { mostrarSelectorFecha = false }) {
-                    Text("Cancelar")
-                }
+    val onSeleccionarFecha = remember(context, fechaIso) {
+        {
+            val calendario = Calendar.getInstance()
+            val fechaExistente = fechaIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            if (fechaExistente != null) {
+                calendario.set(fechaExistente.year, fechaExistente.monthValue - 1, fechaExistente.dayOfMonth)
             }
-        ) {
-            androidx.compose.material3.DatePicker(state = datePickerState)
+            val minCalendar = Calendar.getInstance().apply {
+                set(1900, Calendar.JANUARY, 1)
+            }
+            val maxCalendar = Calendar.getInstance().apply {
+                add(Calendar.YEAR, -14)
+            }
+            if (calendario.timeInMillis > maxCalendar.timeInMillis) {
+                calendario.timeInMillis = maxCalendar.timeInMillis
+            }
+            if (calendario.timeInMillis < minCalendar.timeInMillis) {
+                calendario.timeInMillis = minCalendar.timeInMillis
+            }
+            val dialog = DatePickerDialog(
+                context,
+                { _, year, month, dayOfMonth ->
+                    val seleccion = LocalDate.of(year, month + 1, dayOfMonth)
+                        .format(DateTimeFormatter.ISO_DATE)
+                    viewModel.actualizarFechaNacimiento(seleccion)
+                },
+                calendario.get(Calendar.YEAR),
+                calendario.get(Calendar.MONTH),
+                calendario.get(Calendar.DAY_OF_MONTH)
+            )
+            dialog.datePicker.maxDate = maxCalendar.timeInMillis
+            dialog.datePicker.minDate = minCalendar.timeInMillis
+            dialog.show()
         }
     }
+    val fechaFieldInteraction = remember { MutableInteractionSource() }
 
     Scaffold(
         topBar = {
@@ -307,9 +306,13 @@ fun ProfileScreen(
                     label = { Text("Fecha de nacimiento") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { mostrarSelectorFecha = true },
+                        .clickable(
+                            interactionSource = fechaFieldInteraction,
+                            indication = null
+                        ) { onSeleccionarFecha() },
                     readOnly = true,
                     isError = estado.value.errorFechaNacimiento != null,
+                    interactionSource = fechaFieldInteraction,
                     supportingText = {
                         estado.value.errorFechaNacimiento?.let { Text(it, color = Color.Red) }
                     }

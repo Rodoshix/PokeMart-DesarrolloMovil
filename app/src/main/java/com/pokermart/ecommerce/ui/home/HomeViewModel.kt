@@ -31,7 +31,7 @@ data class ProductItem(
 
 data class HomeUiState(
     val searchQuery: String = "",
-    val address: String = "Los Quillayes 717",
+    val address: String = "Debe ingresar Direccion",
     val carouselImages: List<String> = emptyList(),
     val categories: List<CategoryItem> = emptyList(),
     val snackbarMessage: String? = null
@@ -58,7 +58,7 @@ class HomeViewModel(
     private fun cargarEstadoInicial() {
         val direccionGuardada = sessionManager.obtenerSesion()?.direccion
         uiState = uiState.copy(
-            address = direccionGuardada?.takeIf { it.isNotBlank() } ?: "Los Quillayes 717",
+            address = direccionGuardada?.takeIf { it.isNotBlank() } ?: "Debe ingresar Direccion",
             carouselImages = listOf(
                 "https://oyster.ignimgs.com/mediawiki/apis.ign.com/pokemon-scarlet-violet/e/ef/Pokemon_Paldea_Map.jpg",
                 "https://static.wikia.nocookie.net/pokemon/images/f/f8/Sinnoh_BDSP.png/revision/latest?cb=20210818192524",

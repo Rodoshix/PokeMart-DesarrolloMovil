@@ -25,12 +25,15 @@ import com.pokermart.ecommerce.ui.products.ProductOptionsViewModel
 import com.pokermart.ecommerce.ui.products.ProductsViewModel
 import com.pokermart.ecommerce.ui.profile.ProfileScreen
 import com.pokermart.ecommerce.ui.profile.ProfileViewModel
+import com.pokermart.ecommerce.ui.register.RegisterScreen
+import com.pokermart.ecommerce.ui.register.RegisterViewModel
 
 private const val ARG_USUARIO_ID = "usuarioId"
 
 sealed class Destino(val ruta: String) {
     data object Login : Destino("login")
     data object Home : Destino("home")
+    data object Registro : Destino("registro")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
             "productos/$categoriaId/${Uri.encode(categoriaNombre)}"
@@ -71,7 +74,28 @@ fun NavGraph(
                     navController.navigate(Destino.Home.ruta) {
                         popUpTo(Destino.Login.ruta) { inclusive = true }
                     }
+                },
+                onIrARegistro = {
+                    navController.navigate(Destino.Registro.ruta) {
+                        launchSingleTop = true
+                    }
                 }
+            )
+        }
+
+        composable(route = Destino.Registro.ruta) {
+            val registerViewModel = viewModel<RegisterViewModel>(
+                factory = DI.registerViewModelFactory()
+            )
+            RegisterScreen(
+                viewModel = registerViewModel,
+                onRegistroExitoso = { _ ->
+                    navController.navigate(Destino.Home.ruta) {
+                        popUpTo(Destino.Login.ruta) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onVolverLogin = { navController.popBackStack() }
             )
         }
 

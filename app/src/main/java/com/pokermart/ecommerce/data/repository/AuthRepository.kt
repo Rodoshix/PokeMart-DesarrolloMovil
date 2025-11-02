@@ -13,13 +13,20 @@ sealed class ResultadoAutenticacion {
     object CredencialesInvalidas : ResultadoAutenticacion()
 }
 
+sealed class ResultadoRegistro {
+    data class Exito(val usuario: Usuario) : ResultadoRegistro()
+    object CorreoYaRegistrado : ResultadoRegistro()
+    data class Error(val mensaje: String? = null) : ResultadoRegistro()
+}
+
 class RepositorioAutenticacion(
     private val usuarioDao: UsuarioDao
 ) {
 
     suspend fun iniciarSesion(correo: String, contrasena: String): ResultadoAutenticacion =
         withContext(Dispatchers.IO) {
-            val usuario = usuarioDao.buscarPorCorreo(correo)
+            val correoNormalizado = correo.trim().lowercase()
+            val usuario = usuarioDao.buscarPorCorreo(correoNormalizado)
             if (usuario == null || usuario.contrasena != contrasena) {
                 ResultadoAutenticacion.CredencialesInvalidas
             } else {
@@ -27,16 +34,25 @@ class RepositorioAutenticacion(
             }
         }
 
-    suspend fun registrar(nombre: String, correo: String, contrasena: String): Usuario =
+    suspend fun registrar(nombre: String, correo: String, contrasena: String): ResultadoRegistro =
         withContext(Dispatchers.IO) {
+            val correoNormalizado = correo.trim().lowercase()
+            val existente = usuarioDao.buscarPorCorreo(correoNormalizado)
+            if (existente != null) {
+                return@withContext ResultadoRegistro.CorreoYaRegistrado
+            }
             val nuevoUsuario = UsuarioEntity(
                 id = System.currentTimeMillis(),
-                nombre = nombre,
-                correo = correo.lowercase(),
+                nombre = nombre.trim(),
+                correo = correoNormalizado,
                 contrasena = contrasena
             )
-            usuarioDao.insertar(nuevoUsuario)
-            nuevoUsuario.aModelo()
+            return@withContext try {
+                usuarioDao.insertar(nuevoUsuario)
+                ResultadoRegistro.Exito(nuevoUsuario.aModelo())
+            } catch (ex: Exception) {
+                ResultadoRegistro.Error(ex.message)
+            }
         }
 
     suspend fun obtenerUsuarioPorId(id: Long): Usuario? = withContext(Dispatchers.IO) {
