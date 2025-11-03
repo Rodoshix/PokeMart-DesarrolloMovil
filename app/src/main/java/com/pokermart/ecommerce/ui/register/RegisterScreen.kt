@@ -1,4 +1,4 @@
-package com.pokermart.ecommerce.ui.login
+package com.pokermart.ecommerce.ui.register
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,22 +26,21 @@ import androidx.compose.ui.unit.dp
 import com.pokermart.ecommerce.data.model.Usuario
 import com.pokermart.ecommerce.ui.common.BotonPrincipalPokeMart
 import com.pokermart.ecommerce.ui.common.CampoTextoPokeMart
-import com.pokermart.ecommerce.ui.common.LogoGiratorio
 
 @Composable
-fun LoginScreen(
-    viewModel: LoginViewModel,
-    onLoginExitoso: (Usuario) -> Unit,
-    onIrARegistro: () -> Unit,
+fun RegisterScreen(
+    viewModel: RegisterViewModel,
+    onRegistroExitoso: (Usuario) -> Unit,
+    onVolverLogin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(estado.usuarioAutenticado) {
-        estado.usuarioAutenticado?.let { usuario ->
-            onLoginExitoso(usuario)
-        }
+    LaunchedEffect(estado.usuarioRegistrado) {
+        val usuario = estado.usuarioRegistrado ?: return@LaunchedEffect
+        onRegistroExitoso(usuario)
+        viewModel.consumirUsuarioRegistrado()
     }
 
     LaunchedEffect(estado.mensajeErrorGeneral) {
@@ -62,19 +61,24 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            LogoGiratorio()
-            Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Bienvenido a PokeMart",
+                text = "Crear cuenta",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Inicia sesion para continuar con tus compras.",
+                text = "Completa tus datos para unirte a PokeMart.",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
             Spacer(modifier = Modifier.height(32.dp))
+            CampoTextoPokeMart(
+                valor = estado.nombre,
+                enCambio = viewModel::actualizarNombre,
+                etiqueta = "Nombre completo",
+                error = estado.nombreError
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             CampoTextoPokeMart(
                 valor = estado.correo,
                 enCambio = viewModel::actualizarCorreo,
@@ -90,10 +94,18 @@ fun LoginScreen(
                 esContrasena = true
             )
             Spacer(modifier = Modifier.height(16.dp))
+            CampoTextoPokeMart(
+                valor = estado.confirmacion,
+                enCambio = viewModel::actualizarConfirmacion,
+                etiqueta = "Confirmar contrasena",
+                error = estado.confirmacionError,
+                esContrasena = true
+            )
+            Spacer(modifier = Modifier.height(24.dp))
             BotonPrincipalPokeMart(
-                texto = if (estado.cargando) "Validando..." else "Entrar",
+                texto = if (estado.cargando) "Creando..." else "Registrar",
                 habilitado = !estado.cargando,
-                enClick = viewModel::iniciarSesion,
+                enClick = viewModel::registrar,
                 modifier = Modifier.fillMaxWidth()
             )
             if (estado.cargando) {
@@ -101,8 +113,8 @@ fun LoginScreen(
                 CircularProgressIndicator()
             }
             Spacer(modifier = Modifier.height(16.dp))
-            TextButton(onClick = onIrARegistro, enabled = !estado.cargando) {
-                Text(text = "No tienes cuenta? Registrate")
+            TextButton(onClick = onVolverLogin, enabled = !estado.cargando) {
+                Text(text = "Ya tienes cuenta? Inicia sesion")
             }
         }
     }
