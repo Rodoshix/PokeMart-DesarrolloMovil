@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import com.pokermart.ecommerce.ui.common.EstadoVacio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,29 +100,54 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            HomeCarousel(images = state.carouselImages)
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Categorias",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
-            )
-            CategoryRow(
-                categories = state.categories,
-                onCategoryClick = onCategoryClick
-            )
-            if (featuredProducts.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
+            val estaBuscando = state.searchQuery.isNotBlank()
+            if (estaBuscando) {
                 Text(
-                    text = "Destacados",
+                    text = "Resultados de \"${state.searchQuery}\"",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
                 )
-                ProductGrid(
-                    productos = featuredProducts,
-                    onProductClick = onProductClick,
-                    modifier = Modifier.weight(1f, fill = true)
+                if (state.searchResults.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        EstadoVacio(mensaje = "No encontramos productos que coincidan con tu busqueda.")
+                    }
+                } else {
+                    ProductGrid(
+                        productos = state.searchResults,
+                        onProductClick = onProductClick,
+                        modifier = Modifier.weight(1f, fill = true)
+                    )
+                }
+            } else {
+                HomeCarousel(images = state.carouselImages)
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Categorias",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
                 )
+                CategoryRow(
+                    categories = state.categories,
+                    onCategoryClick = onCategoryClick
+                )
+                if (featuredProducts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Destacados",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                    )
+                    ProductGrid(
+                        productos = featuredProducts,
+                        onProductClick = onProductClick,
+                        modifier = Modifier.weight(1f, fill = true)
+                    )
+                }
             }
         }
     }

@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
         UsuarioEntity::class,
         DireccionEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class PokeMartDatabase : RoomDatabase() {

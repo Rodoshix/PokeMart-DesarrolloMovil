@@ -1,5 +1,6 @@
 package com.pokermart.ecommerce.ui.common
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -221,12 +223,20 @@ fun TarjetaProducto(
 fun TarjetaOpcionProducto(
     opcion: OpcionProducto,
     precioBase: Double,
+    seleccionado: Boolean,
+    onSeleccionar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onSeleccionar,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (seleccionado) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         ),
+        border = if (seleccionado) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         modifier = modifier
     ) {
         Column(
@@ -242,9 +252,22 @@ fun TarjetaOpcionProducto(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val precioFinal = precioBase + opcion.precioExtra
+                RadioButton(
+                    selected = seleccionado,
+                    onClick = onSeleccionar
+                )
+                val cantidad = opcion.extraerCantidad()
+                val precioFinal = if (cantidad != null && cantidad > 0) {
+                    (precioBase * cantidad) + opcion.precioExtra
+                } else {
+                    precioBase + opcion.precioExtra
+                }
+                val totalTexto = "$" + String.format("%.2f", precioFinal)
+                val precioPorUnidadTexto = cantidad
+                    ?.takeIf { it > 0 }
+                    ?.let { count -> "$" + String.format("%.2f", precioFinal / count) }
                 Text(
-                    text = "$${String.format("%.2f", precioFinal)}",
+                    text = precioPorUnidadTexto?.let { "$totalTexto ($it c/u)" } ?: totalTexto,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Text(
@@ -254,6 +277,13 @@ fun TarjetaOpcionProducto(
             }
         }
     }
+}
+
+private fun OpcionProducto.extraerCantidad(): Int? {
+    if (!nombre.contains('x', ignoreCase = true)) return null
+    val partes = nombre.lowercase().split('x')
+    val numero = partes.lastOrNull()?.filter { it.isDigit() }
+    return numero?.toIntOrNull()
 }
 
 @Composable

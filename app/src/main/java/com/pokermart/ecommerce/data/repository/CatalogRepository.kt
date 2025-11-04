@@ -26,6 +26,11 @@ class RepositorioCatalogo(
             relaciones.map { it.aModelo() }
         }
 
+    fun buscarProductos(query: String): Flow<List<Producto>> =
+        productoDao.buscarPorTexto(query).map { relaciones ->
+            relaciones.map { it.aModelo() }
+        }
+
     fun observarProductosPorCategoria(categoriaId: Long): Flow<List<Producto>> =
         productoDao.observarPorCategoria(categoriaId).map { relaciones ->
             relaciones.map { it.aModelo() }

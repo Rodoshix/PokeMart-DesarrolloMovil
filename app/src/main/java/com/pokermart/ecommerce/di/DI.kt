@@ -82,6 +82,8 @@ object DI {
         initializer {
             ProductOptionsViewModel(
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
+                sessionManager = obtenerGestorSesion(),
                 productoId = productoId
             )
         }

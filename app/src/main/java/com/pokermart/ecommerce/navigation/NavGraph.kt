@@ -189,7 +189,13 @@ fun NavGraph(
             )
             ProductOptionsScreen(
                 viewModel = opcionesViewModel,
-                onVolver = { navController.popBackStack() }
+                onVolver = { navController.popBackStack() },
+                onIrPerfil = {
+                    val usuarioId = sessionManager.obtenerSesion()?.id
+                    if (usuarioId != null) {
+                        navController.navigate(Destino.Perfil.crearRuta(usuarioId))
+                    }
+                }
             )
         }
 
