@@ -71,6 +71,24 @@ class EnviarAViewModel(
         }
     }
 
+    fun editarDireccion(id: Long) {
+        val direccion = direccionesActuales.firstOrNull { it.id == id } ?: return
+        _uiState.update {
+            it.copy(
+                mostrarDialogo = true,
+                formulario = DireccionFormState(
+                    id = direccion.id,
+                    etiqueta = direccion.etiqueta.orEmpty(),
+                    direccion = direccion.direccion,
+                    referencia = direccion.referencia.orEmpty(),
+                    latitud = direccion.latitud,
+                    longitud = direccion.longitud,
+                    marcarComoPredeterminada = direccion.esPredeterminada
+                )
+            )
+        }
+    }
+
     fun solicitarEliminarDireccion(id: Long) {
         _uiState.update {
             it.copy(confirmacionEliminarId = id, eliminando = false)
@@ -151,6 +169,17 @@ class EnviarAViewModel(
         val referencia = formulario.referencia.trim().ifEmpty { null }
         val direccionExistente = formulario.id?.let { id ->
             direccionesActuales.firstOrNull { it.id == id }
+        }
+        if (!formulario.marcarComoPredeterminada) {
+            val existeOtraPredeterminada = direccionesActuales.any { direccion ->
+                direccion.esPredeterminada && (formulario.id == null || direccion.id != formulario.id)
+            }
+            if (!existeOtraPredeterminada) {
+                _uiState.update {
+                    it.copy(mensaje = "Necesitas dejar al menos una direccion predeterminada.")
+                }
+                return
+            }
         }
         val direccion = Direccion(
             id = formulario.id ?: 0L,

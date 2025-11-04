@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -148,8 +149,9 @@ fun EnviarAScreen(
                             DireccionItem(
                                 item = direccion,
                                 onSelect = { viewModel.seleccionarPredeterminada(direccion.id) },
+                                onEdit = { viewModel.editarDireccion(direccion.id) },
                                 onDelete = { viewModel.solicitarEliminarDireccion(direccion.id) },
-                                eliminarHabilitado = !state.eliminando
+                                accionesHabilitadas = !state.eliminando
                             )
                         }
                     }
@@ -223,8 +225,9 @@ fun EnviarAScreen(
 private fun DireccionItem(
     item: DireccionItemUi,
     onSelect: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
-    eliminarHabilitado: Boolean
+    accionesHabilitadas: Boolean
 ) {
     val etiqueta = item.etiqueta?.takeIf { it.isNotBlank() }
     Column(
@@ -270,8 +273,17 @@ private fun DireccionItem(
                 }
             }
             IconButton(
+                onClick = onEdit,
+                enabled = accionesHabilitadas
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Editar direccion"
+                )
+            }
+            IconButton(
                 onClick = onDelete,
-                enabled = eliminarHabilitado
+                enabled = accionesHabilitadas
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
