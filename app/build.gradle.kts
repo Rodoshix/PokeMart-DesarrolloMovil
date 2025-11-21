@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
     implementation(libs.play.services.location)
+    implementation(libs.mapbox.android)
 
     testImplementation(libs.junit)
 

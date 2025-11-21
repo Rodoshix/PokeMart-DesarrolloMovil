@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -40,35 +40,48 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraOptions
+import com.mapbox.maps.MapView
+import com.mapbox.maps.Style
+import com.mapbox.maps.plugin.gestures.addOnMapClickListener
+import com.mapbox.maps.plugin.gestures.gestures
 import com.pokermart.ecommerce.ui.common.EstadoVacio
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +96,8 @@ fun EnviarAScreen(
     val scope = rememberCoroutineScope()
     val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val geocoder = remember { Geocoder(context) }
+    var mostrarSelectorMapa by remember { mutableStateOf(false) }
+    var procesandoSeleccionMapa by remember { mutableStateOf(false) }
 
     val locationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -132,6 +147,17 @@ fun EnviarAScreen(
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                val direccionMapa = state.direcciones
+                    .firstOrNull { it.esPredeterminada && it.latitud != null && it.longitud != null }
+                    ?: state.direcciones.firstOrNull { it.latitud != null && it.longitud != null }
+
+                direccionMapa?.let {
+                    MapaDireccionPreview(
+                        item = it,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 if (state.direcciones.isEmpty()) {
                     EstadoVacio(
                         mensaje = "Aun no tienes direcciones guardadas.",
@@ -206,6 +232,7 @@ fun EnviarAScreen(
             onEtiquetaChange = viewModel::actualizarEtiqueta,
             onDireccionChange = viewModel::actualizarDireccion,
             onReferenciaChange = viewModel::actualizarReferencia,
+            onOpenMap = { mostrarSelectorMapa = true },
             onPredeterminadaChange = viewModel::actualizarPredeterminada,
             onDismiss = viewModel::cerrarDialogo,
             onSave = viewModel::guardarDireccion
@@ -217,6 +244,38 @@ fun EnviarAScreen(
             eliminando = state.eliminando,
             onConfirm = viewModel::confirmarEliminacion,
             onDismiss = viewModel::cancelarEliminacion
+        )
+    }
+
+    if (mostrarSelectorMapa) {
+        SelectorMapaDialog(
+            latitudInicial = state.formulario.latitud,
+            longitudInicial = state.formulario.longitud,
+            procesando = procesandoSeleccionMapa,
+            onDismiss = {
+                if (!procesandoSeleccionMapa) {
+                    mostrarSelectorMapa = false
+                }
+            },
+            onUbicacionConfirmada = { latitud, longitud ->
+                scope.launch {
+                    procesandoSeleccionMapa = true
+                    try {
+                        val direccionObtenida = geocoder.obtenerDireccion(latitud, longitud)
+                        if (direccionObtenida == null) {
+                            viewModel.mostrarMensaje("No encontramos una direccion exacta, completa los datos manualmente.")
+                        }
+                        viewModel.prepararFormularioConUbicacion(
+                            direccion = direccionObtenida ?: "Ubicacion seleccionada en el mapa",
+                            latitud = latitud,
+                            longitud = longitud
+                        )
+                    } finally {
+                        procesandoSeleccionMapa = false
+                        mostrarSelectorMapa = false
+                    }
+                }
+            }
         )
     }
 }
@@ -300,6 +359,7 @@ private fun DireccionDialog(
     onEtiquetaChange: (String) -> Unit,
     onDireccionChange: (String) -> Unit,
     onReferenciaChange: (String) -> Unit,
+    onOpenMap: () -> Unit,
     onPredeterminadaChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onSave: () -> Unit
@@ -331,6 +391,8 @@ private fun DireccionDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val latitudSeleccionada = state.formulario.latitud
+                val longitudSeleccionada = state.formulario.longitud
                 OutlinedTextField(
                     value = state.formulario.etiqueta,
                     onValueChange = onEtiquetaChange,
@@ -355,6 +417,24 @@ private fun DireccionDialog(
                     label = { Text("Referencia (opcional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedButton(
+                    onClick = onOpenMap,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.guardando
+                ) {
+                    Text("Seleccionar en el mapa")
+                }
+                if (latitudSeleccionada != null && longitudSeleccionada != null) {
+                    Text(
+                        text = String.format(
+                            Locale.getDefault(),
+                            "Ubicacion seleccionada: %.5f, %.5f",
+                            latitudSeleccionada,
+                            longitudSeleccionada
+                        ),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -369,6 +449,227 @@ private fun DireccionDialog(
         }
     )
 }
+
+@Composable
+private fun SelectorMapaDialog(
+    latitudInicial: Double?,
+    longitudInicial: Double?,
+    procesando: Boolean,
+    onDismiss: () -> Unit,
+    onUbicacionConfirmada: (Double, Double) -> Unit
+) {
+    val context = LocalContext.current
+    val puntoInicial = remember(latitudInicial, longitudInicial) {
+        if (latitudInicial != null && longitudInicial != null) {
+            crearPunto(latitudInicial, longitudInicial)
+        } else {
+            DEFAULT_POINT
+        }
+    }
+    var puntoSeleccionado by remember(latitudInicial, longitudInicial) {
+        mutableStateOf(
+            if (latitudInicial != null && longitudInicial != null) {
+                crearPunto(latitudInicial, longitudInicial)
+            } else {
+                null
+            }
+        )
+    }
+    val mapView = remember { MapView(context) }
+    var styleListo by remember { mutableStateOf(false) }
+
+    DisposableEffect(mapView) {
+        mapView.onStart()
+        onDispose {
+            mapView.onStop()
+            mapView.onDestroy()
+        }
+    }
+
+    LaunchedEffect(mapView) {
+        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
+            styleListo = true
+            mapView.getMapboxMap().setCamera(
+                CameraOptions.Builder()
+                    .center(puntoInicial)
+                    .zoom(DEFAULT_MAP_ZOOM)
+                    .build()
+            )
+        }
+        mapView.gestures.addOnMapClickListener { point ->
+            puntoSeleccionado = point
+            mapView.getMapboxMap().setCamera(
+                CameraOptions.Builder()
+                    .center(point)
+                    .zoom(DEFAULT_MAP_ZOOM)
+                    .build()
+            )
+            true
+        }
+    }
+
+    Dialog(
+        onDismissRequest = { if (!procesando) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Selecciona un punto en el mapa",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "Toca el mapa para elegir tu direccion exacta.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp)
+                ) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { mapView }
+                    )
+                    if (styleListo) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "Punto seleccionado",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(32.dp)
+                        )
+                    }
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        enabled = !procesando
+                    ) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick = {
+                            puntoSeleccionado?.let { seleccion ->
+                                onUbicacionConfirmada(
+                                    seleccion.latitude(),
+                                    seleccion.longitude()
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = puntoSeleccionado != null && !procesando
+                    ) {
+                        if (procesando) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Usar este punto")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MapaDireccionPreview(
+    item: DireccionItemUi,
+    modifier: Modifier = Modifier
+) {
+    val latitud = item.latitud ?: return
+    val longitud = item.longitud ?: return
+    val punto = remember(latitud, longitud) { crearPunto(latitud, longitud) }
+    val context = LocalContext.current
+    val mapView = remember { MapView(context) }
+    var styleListo by remember { mutableStateOf(false) }
+
+    DisposableEffect(mapView) {
+        mapView.onStart()
+        onDispose {
+            mapView.onStop()
+            mapView.onDestroy()
+        }
+    }
+
+    LaunchedEffect(mapView) {
+        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
+            styleListo = true
+            mapView.getMapboxMap().setCamera(
+                CameraOptions.Builder()
+                    .center(punto)
+                    .zoom(DEFAULT_MAP_ZOOM)
+                    .build()
+            )
+        }
+    }
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Direccion seleccionada en el mapa",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            tonalElevation = 4.dp
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                AndroidView(
+                    modifier = Modifier.matchParentSize(),
+                    factory = { mapView }
+                )
+                if (styleListo) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Punto seleccionado",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(32.dp)
+                    )
+                }
+            }
+        }
+        Text(
+            text = item.direccion,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        item.referencia?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                text = "Referencia: $it",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+private val DEFAULT_POINT: Point = Point.fromLngLat(-70.6693, -33.4489)
+private const val DEFAULT_MAP_ZOOM = 16.0
+
+private fun crearPunto(latitud: Double, longitud: Double): Point =
+    Point.fromLngLat(longitud, latitud)
 
 @Composable
 private fun ConfirmarEliminarDialog(
