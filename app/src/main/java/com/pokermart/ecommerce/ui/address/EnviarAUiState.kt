@@ -12,12 +12,16 @@ data class DireccionItemUi(
 
 data class DireccionFormState(
     val id: Long? = null,
+    val region: String = "",
+    val ciudad: String = "",
     val etiqueta: String = "",
     val direccion: String = "",
     val referencia: String = "",
     val latitud: Double? = null,
     val longitud: Double? = null,
     val marcarComoPredeterminada: Boolean = false,
+    val errorRegion: String? = null,
+    val errorCiudad: String? = null,
     val errorDireccion: String? = null
 )
 

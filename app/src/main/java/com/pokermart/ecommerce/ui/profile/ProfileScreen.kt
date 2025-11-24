@@ -27,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -266,35 +268,12 @@ fun ProfileScreen(
                     value = estado.value.apellido,
                     onValueChange = viewModel::actualizarApellido,
                     label = { Text("Apellido") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = estado.value.errorApellido != null,
+                    supportingText = {
+                        estado.value.errorApellido?.let { Text(it, color = Color.Red) }
+                    }
                 )
-
-                OutlinedTextField(
-                    value = estado.value.region,
-                    onValueChange = viewModel::actualizarRegion,
-                    label = { Text("Region") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = estado.value.comuna,
-                    onValueChange = viewModel::actualizarComuna,
-                    label = { Text("Comuna") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = estado.value.direccion,
-                    onValueChange = viewModel::actualizarDireccion,
-                    label = { Text("Direccion") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                TextButton(
-                    onClick = onGestionarDirecciones,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Administrar direcciones guardadas")
-                }
 
                 OutlinedTextField(
                     value = estado.value.run,
@@ -308,6 +287,15 @@ fun ProfileScreen(
                     }
                 )
 
+                Button(
+                    onClick = onGestionarDirecciones,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Administrar direcciones guardadas")
+                }
+
                 OutlinedTextField(
                     value = fechaSeleccionadaTexto,
                     onValueChange = {},
@@ -319,6 +307,11 @@ fun ProfileScreen(
                             indication = null
                         ) { onSeleccionarFecha() },
                     readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = onSeleccionarFecha) {
+                            Icon(imageVector = Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha")
+                        }
+                    },
                     isError = estado.value.errorFechaNacimiento != null,
                     interactionSource = fechaFieldInteraction,
                     supportingText = {

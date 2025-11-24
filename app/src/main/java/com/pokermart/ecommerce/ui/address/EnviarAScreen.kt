@@ -229,6 +229,8 @@ fun EnviarAScreen(
     if (state.mostrarDialogo) {
         DireccionDialog(
             state = state,
+            onRegionChange = viewModel::actualizarRegion,
+            onCiudadChange = viewModel::actualizarCiudad,
             onEtiquetaChange = viewModel::actualizarEtiqueta,
             onDireccionChange = viewModel::actualizarDireccion,
             onReferenciaChange = viewModel::actualizarReferencia,
@@ -356,6 +358,8 @@ private fun DireccionItem(
 @Composable
 private fun DireccionDialog(
     state: EnviarAUiState,
+    onRegionChange: (String) -> Unit,
+    onCiudadChange: (String) -> Unit,
     onEtiquetaChange: (String) -> Unit,
     onDireccionChange: (String) -> Unit,
     onReferenciaChange: (String) -> Unit,
@@ -394,10 +398,28 @@ private fun DireccionDialog(
                 val latitudSeleccionada = state.formulario.latitud
                 val longitudSeleccionada = state.formulario.longitud
                 OutlinedTextField(
-                    value = state.formulario.etiqueta,
-                    onValueChange = onEtiquetaChange,
-                    label = { Text("Etiqueta (ej: Casa)") },
-                    modifier = Modifier.fillMaxWidth()
+                    value = state.formulario.region,
+                    onValueChange = onRegionChange,
+                    label = { Text("Region") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = state.formulario.errorRegion != null,
+                    supportingText = {
+                        state.formulario.errorRegion?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+                OutlinedTextField(
+                    value = state.formulario.ciudad,
+                    onValueChange = onCiudadChange,
+                    label = { Text("Ciudad") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = state.formulario.errorCiudad != null,
+                    supportingText = {
+                        state.formulario.errorCiudad?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
                 )
                 OutlinedTextField(
                     value = state.formulario.direccion,
@@ -410,6 +432,12 @@ private fun DireccionDialog(
                             Text(text = it, color = MaterialTheme.colorScheme.error)
                         }
                     }
+                )
+                OutlinedTextField(
+                    value = state.formulario.etiqueta,
+                    onValueChange = onEtiquetaChange,
+                    label = { Text("Etiqueta (ej: Casa)") },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = state.formulario.referencia,
