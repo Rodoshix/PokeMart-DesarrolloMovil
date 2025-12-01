@@ -189,10 +189,6 @@ class CartViewModel(
         }
     }
 
-    fun seleccionarMetodoPago(metodo: MetodoPago) {
-        _estado.update { it.copy(metodoPago = metodo) }
-    }
-
     fun confirmarCompra() {
         viewModelScope.launch {
             val uid = usuarioId ?: sessionManager.obtenerSesion()?.id
@@ -211,16 +207,6 @@ class CartViewModel(
                 _estado.update {
                     it.copy(
                         mensajeError = "Tu carrito esta vacio.",
-                        mensajeExito = null,
-                        mostrarAccionDirecciones = false
-                    )
-                }
-                return@launch
-            }
-            if (_estado.value.metodoPago == null) {
-                _estado.update {
-                    it.copy(
-                        mensajeError = "Selecciona un metodo de pago para continuar.",
                         mensajeExito = null,
                         mostrarAccionDirecciones = false
                     )

@@ -10,6 +10,7 @@ import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
+import com.pokermart.ecommerce.ui.checkout.CheckoutViewModel
 import com.pokermart.ecommerce.ui.cart.CartViewModel
 import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.address.EnviarAViewModel
@@ -139,6 +140,17 @@ object DI {
     fun cartViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
         initializer {
             CartViewModel(
+                repositorioCarrito = obtenerRepositorioCarrito(),
+                repositorioCatalogo = obtenerRepositorioCatalogo(),
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
+                sessionManager = obtenerGestorSesion()
+            )
+        }
+    }
+
+    fun checkoutViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            CheckoutViewModel(
                 repositorioCarrito = obtenerRepositorioCarrito(),
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
                 repositorioDirecciones = obtenerRepositorioDirecciones(),
