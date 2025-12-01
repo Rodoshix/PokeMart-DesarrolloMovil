@@ -2,12 +2,16 @@ package com.pokermart.ecommerce.ui.checkout
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pokermart.ecommerce.data.model.CarritoItem
 import com.pokermart.ecommerce.data.model.Direccion
 import com.pokermart.ecommerce.data.model.OpcionProducto
+import com.pokermart.ecommerce.data.model.Pedido
+import com.pokermart.ecommerce.data.model.PedidoItem
 import com.pokermart.ecommerce.data.model.Producto
 import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
+import com.pokermart.ecommerce.data.repository.RepositorioPedidos
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.cart.MetodoPago
 import com.google.android.gms.maps.model.LatLng
@@ -27,6 +31,7 @@ class CheckoutViewModel(
     private val repositorioCarrito: RepositorioCarrito,
     private val repositorioCatalogo: RepositorioCatalogo,
     private val repositorioDirecciones: RepositorioDirecciones,
+    private val repositorioPedidos: RepositorioPedidos,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -35,6 +40,7 @@ class CheckoutViewModel(
 
     private var usuarioId: Long? = null
     private var direccionesActuales: List<Direccion> = emptyList()
+    private var carritoActual: List<CarritoItem> = emptyList()
 
     private val mallLat = -33.52164
     private val mallLon = -70.59867
@@ -90,6 +96,7 @@ class CheckoutViewModel(
         viewModelScope.launch {
             val uid = usuarioId ?: return@launch
             repositorioCarrito.observarCarrito(uid).collectLatest { items ->
+                carritoActual = items
                 val uiItems = items.map { it.aPrecioCalculado() }
                 val subtotal = uiItems.sumOf { it.precioCalculado * it.cantidad }
                 val impuesto = subtotal * 0.19
@@ -186,13 +193,13 @@ class CheckoutViewModel(
                 _estado.update { it.copy(mensajeError = "Debes iniciar sesion.") }
                 return@launch
             }
-            if (_estado.value.metodoPago == null) {
-                _estado.update { it.copy(mensajeError = "Selecciona un metodo de pago.") }
-                return@launch
-            }
             val entrega = _estado.value.metodoEntrega
             if (entrega == null) {
                 _estado.update { it.copy(mensajeError = "Elige retiro en tienda o envio.") }
+                return@launch
+            }
+            if (carritoActual.isEmpty()) {
+                _estado.update { it.copy(mensajeError = "Tu carrito esta vacio.") }
                 return@launch
             }
             if (entrega == MetodoEntrega.ENVIO) {
@@ -202,20 +209,68 @@ class CheckoutViewModel(
                     return@launch
                 }
             }
-            repositorioCarrito.limpiar(uid)
-            _estado.update {
-                it.copy(
-                    mensajeError = null,
-                    mensajeExito = "Compra confirmada. Preparando tu pedido.",
-                    subtotal = 0.0,
-                    impuesto = 0.0,
-                    envio = 0.0,
-                    servicio = 0.0,
-                    total = 0.0
-                )
+            val metodoPago = _estado.value.metodoPago
+            if (metodoPago == null) {
+                _estado.update { it.copy(mensajeError = "Selecciona un metodo de pago.") }
+                return@launch
             }
-            onSuccess()
+            val pedido = construirPedido(
+                usuarioId = uid,
+                metodoPago = metodoPago,
+                metodoEntrega = entrega,
+                direccionId = if (entrega == MetodoEntrega.ENVIO) _estado.value.direccionSeleccionadaId else null
+            )
+            val resultado = runCatching { repositorioPedidos.crearPedido(pedido) }
+            resultado.onSuccess { pedidoGuardado ->
+                repositorioCarrito.limpiar(uid)
+                carritoActual = emptyList()
+                _estado.update {
+                    it.copy(
+                        mensajeError = null,
+                        mensajeExito = "Compra confirmada. Pedido #${pedidoGuardado.id} en preparacion.",
+                        subtotal = 0.0,
+                        impuesto = 0.0,
+                        envio = 0.0,
+                        servicio = 0.0,
+                        total = 0.0
+                    )
+                }
+                onSuccess()
+            }.onFailure { error ->
+                _estado.update { it.copy(mensajeError = error.message ?: "No pudimos guardar tu pedido.") }
+            }
         }
+    }
+
+    private suspend fun construirPedido(
+        usuarioId: Long,
+        metodoPago: MetodoPago,
+        metodoEntrega: MetodoEntrega,
+        direccionId: Long?
+    ): Pedido {
+        val items = carritoActual.map { item ->
+            val precioCalculado = item.aPrecioCalculado().precioCalculado
+            PedidoItem(
+                pedidoId = 0,
+                productoId = item.productoId,
+                opcionId = item.opcionId,
+                cantidad = item.cantidad,
+                precioUnitario = precioCalculado,
+                precioTotal = precioCalculado * item.cantidad
+            )
+        }
+        return Pedido(
+            usuarioId = usuarioId,
+            direccionId = direccionId,
+            subtotal = _estado.value.subtotal,
+            impuesto = _estado.value.impuesto,
+            envio = _estado.value.envio,
+            servicio = _estado.value.servicio,
+            total = _estado.value.total,
+            metodoPago = metodoPago.name,
+            metodoEntrega = metodoEntrega.name,
+            items = items
+        )
     }
 
     private suspend fun obtenerRuta(origen: LatLng, destino: LatLng, apiKey: String): List<LatLng>? =

@@ -9,6 +9,7 @@ import com.pokermart.ecommerce.data.repository.RepositorioAutenticacion
 import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
+import com.pokermart.ecommerce.data.repository.RepositorioPedidos
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.checkout.CheckoutViewModel
 import com.pokermart.ecommerce.ui.cart.CartViewModel
@@ -45,6 +46,9 @@ object DI {
     private val repositorioCarrito: RepositorioCarrito by lazy {
         RepositorioCarrito(baseDeDatos.carritoDao())
     }
+    private val repositorioPedidos: RepositorioPedidos by lazy {
+        RepositorioPedidos(baseDeDatos.pedidoDao())
+    }
 
     fun inicializar(app: Application) {
         if (this::aplicacion.isInitialized) return
@@ -60,6 +64,7 @@ object DI {
     fun obtenerRepositorioCatalogo(): RepositorioCatalogo = repositorioCatalogo
     fun obtenerRepositorioDirecciones(): RepositorioDirecciones = repositorioDirecciones
     fun obtenerRepositorioCarrito(): RepositorioCarrito = repositorioCarrito
+    fun obtenerRepositorioPedidos(): RepositorioPedidos = repositorioPedidos
 
     @Suppress("unused")
     internal fun alcanceGlobal(): CoroutineScope = alcanceAplicacion
@@ -154,6 +159,7 @@ object DI {
                 repositorioCarrito = obtenerRepositorioCarrito(),
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
                 repositorioDirecciones = obtenerRepositorioDirecciones(),
+                repositorioPedidos = obtenerRepositorioPedidos(),
                 sessionManager = obtenerGestorSesion()
             )
         }
