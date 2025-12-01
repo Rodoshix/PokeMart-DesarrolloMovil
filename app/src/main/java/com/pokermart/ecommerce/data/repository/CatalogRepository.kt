@@ -16,6 +16,7 @@ class RepositorioCatalogo(
     private val productoDao: ProductoDao
 ) {
 
+    @Suppress("unused")
     fun observarCategorias(): Flow<List<Categoria>> =
         categoriaDao.observarCategorias().map { entidades ->
             entidades.map { it.aModelo() }

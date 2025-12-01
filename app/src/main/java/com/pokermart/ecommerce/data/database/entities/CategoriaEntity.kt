@@ -20,6 +20,7 @@ fun CategoriaEntity.aModelo() = Categoria(
     imagenUrl = imagenUrl
 )
 
+@Suppress("unused")
 fun Categoria.aEntity() = CategoriaEntity(
     id = id,
     nombre = nombre,

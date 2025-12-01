@@ -37,6 +37,7 @@ fun OpcionProductoEntity.aModelo() = OpcionProducto(
     stock = stock
 )
 
+@Suppress("unused")
 fun OpcionProducto.aEntity() = OpcionProductoEntity(
     id = id,
     productoId = productoId,

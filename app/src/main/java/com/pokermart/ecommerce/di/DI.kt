@@ -60,6 +60,7 @@ object DI {
     fun obtenerRepositorioDirecciones(): RepositorioDirecciones = repositorioDirecciones
     fun obtenerRepositorioCarrito(): RepositorioCarrito = repositorioCarrito
 
+    @Suppress("unused")
     internal fun alcanceGlobal(): CoroutineScope = alcanceAplicacion
 
     fun loginViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
