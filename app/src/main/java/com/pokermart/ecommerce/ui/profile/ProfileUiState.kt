@@ -13,6 +13,7 @@ data class ProfileUiState(
     val correo: String = "",
     val fotoActual: String? = null,
     val errorNombre: String? = null,
+    val errorApellido: String? = null,
     val errorRun: String? = null,
     val errorFechaNacimiento: String? = null,
     val mensajeExito: String? = null,

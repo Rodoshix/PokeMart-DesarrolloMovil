@@ -1,3 +1,5 @@
+import org.gradle.authentication.http.BasicAuthentication
+
 pluginManagement {
     repositories {
         google {
@@ -16,6 +18,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+        }
     }
 }
 

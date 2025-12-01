@@ -26,6 +26,14 @@ class RegisterViewModel(
         )
     }
 
+    fun actualizarApellido(nuevoApellido: String) {
+        _estado.value = _estado.value.copy(
+            apellido = nuevoApellido,
+            apellidoError = null,
+            mensajeErrorGeneral = null
+        )
+    }
+
     fun actualizarCorreo(nuevoCorreo: String) {
         _estado.value = _estado.value.copy(
             correo = nuevoCorreo,
@@ -53,6 +61,11 @@ class RegisterViewModel(
     fun registrar() {
         val estadoActual = _estado.value
         val nombreError = Validadores.validarCampoObligatorio(estadoActual.nombre, "nombre")
+        val apellidoError = when {
+            estadoActual.apellido.trim().isEmpty() -> "El apellido es obligatorio."
+            estadoActual.apellido.trim().length < 2 -> "El apellido debe tener al menos 2 caracteres."
+            else -> null
+        }
         val correoError = Validadores.validarCorreo(estadoActual.correo)
         val contrasenaError = Validadores.validarContrasena(estadoActual.contrasena)
         val confirmacionError = if (estadoActual.contrasena != estadoActual.confirmacion) {
@@ -61,9 +74,10 @@ class RegisterViewModel(
             null
         }
 
-        if (nombreError != null || correoError != null || contrasenaError != null || confirmacionError != null) {
+        if (nombreError != null || apellidoError != null || correoError != null || contrasenaError != null || confirmacionError != null) {
             _estado.value = estadoActual.copy(
                 nombreError = nombreError,
+                apellidoError = apellidoError,
                 correoError = correoError,
                 contrasenaError = contrasenaError,
                 confirmacionError = confirmacionError,
@@ -77,6 +91,7 @@ class RegisterViewModel(
         viewModelScope.launch {
             when (val resultado = repositorioAutenticacion.registrar(
                 nombre = estadoActual.nombre,
+                apellido = estadoActual.apellido,
                 correo = estadoActual.correo,
                 contrasena = estadoActual.contrasena
             )) {

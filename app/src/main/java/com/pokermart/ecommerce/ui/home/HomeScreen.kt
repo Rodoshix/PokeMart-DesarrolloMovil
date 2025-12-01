@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +69,7 @@ fun HomeScreen(
     featuredProducts: List<ProductItem>,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit,
     onCategoryClick: (CategoryItem) -> Unit,
@@ -85,8 +89,10 @@ fun HomeScreen(
             HomeTopBar(
                 searchQuery = state.searchQuery,
                 address = state.address,
+                cartCount = state.cartCount,
                 onSearchChange = onSearchChange,
                 onBellClick = onBellClick,
+                onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
                 onChangeAddress = onChangeAddress
             )
@@ -158,8 +164,10 @@ fun HomeScreen(
 private fun HomeTopBar(
     searchQuery: String,
     address: String,
+    cartCount: Int,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit
 ) {
@@ -183,6 +191,25 @@ private fun HomeTopBar(
                 )
             },
             actions = {
+                IconButton(onClick = onCartClick) {
+                    if (cartCount > 0) {
+                        BadgedBox(badge = {
+                            Badge {
+                                Text(text = cartCount.coerceAtMost(99).toString())
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Ver carrito"
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = "Ver carrito"
+                        )
+                    }
+                }
                 IconButton(onClick = onProfileClick) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -415,7 +442,8 @@ fun HomeRoute(
     onChangeAddress: () -> Unit = {},
     onCategoryClick: (CategoryItem) -> Unit = {},
     onProductClick: (ProductItem) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onCartClick: () -> Unit = {}
 ) {
     val state = viewModel.uiState
     val featuredProducts by viewModel.destacados.collectAsState(initial = emptyList())
@@ -424,6 +452,7 @@ fun HomeRoute(
         featuredProducts = featuredProducts,
         onSearchChange = viewModel::onSearchChange,
         onBellClick = viewModel::onBellClick,
+        onCartClick = onCartClick,
         onProfileClick = onProfileClick,
         onChangeAddress = {
             viewModel.onChangeAddress()

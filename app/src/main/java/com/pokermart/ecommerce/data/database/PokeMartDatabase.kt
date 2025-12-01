@@ -4,12 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pokermart.ecommerce.data.dao.CategoriaDao
+import com.pokermart.ecommerce.data.dao.CarritoDao
 import com.pokermart.ecommerce.data.dao.DireccionDao
 import com.pokermart.ecommerce.data.dao.OpcionProductoDao
 import com.pokermart.ecommerce.data.dao.ProductoDao
 import com.pokermart.ecommerce.data.dao.UsuarioDao
+import com.pokermart.ecommerce.data.database.entities.CarritoItemEntity
 import com.pokermart.ecommerce.data.database.entities.CategoriaEntity
 import com.pokermart.ecommerce.data.database.entities.DireccionEntity
 import com.pokermart.ecommerce.data.database.entities.OpcionProductoEntity
@@ -24,9 +25,10 @@ import kotlinx.coroutines.launch
         ProductoEntity::class,
         OpcionProductoEntity::class,
         UsuarioEntity::class,
-        DireccionEntity::class
+        DireccionEntity::class,
+        CarritoItemEntity::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class PokeMartDatabase : RoomDatabase() {
@@ -36,6 +38,7 @@ abstract class PokeMartDatabase : RoomDatabase() {
     abstract fun opcionProductoDao(): OpcionProductoDao
     abstract fun usuarioDao(): UsuarioDao
     abstract fun direccionDao(): DireccionDao
+    abstract fun carritoDao(): CarritoDao
 
     companion object {
         private const val NOMBRE_BD = "poke_mart.db"
@@ -50,23 +53,12 @@ abstract class PokeMartDatabase : RoomDatabase() {
                     NOMBRE_BD
                 )
                     .fallbackToDestructiveMigration()
-                    .addCallback(CallbackPreCarga(alcance))
                     .build()
                 instancia = nuevaInstancia
-                nuevaInstancia
-            }
-        }
-
-        private class CallbackPreCarga(
-            private val alcance: CoroutineScope
-        ) : RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                instancia?.let { baseDeDatos ->
-                    alcance.launch {
-                        PrecargaDatos.cargar(baseDeDatos)
-                    }
+                alcance.launch {
+                    PrecargaDatos.cargar(nuevaInstancia)
                 }
+                nuevaInstancia
             }
         }
     }

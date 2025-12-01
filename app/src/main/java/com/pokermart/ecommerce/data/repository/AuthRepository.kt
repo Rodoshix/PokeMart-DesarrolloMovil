@@ -34,7 +34,7 @@ class RepositorioAutenticacion(
             }
         }
 
-    suspend fun registrar(nombre: String, correo: String, contrasena: String): ResultadoRegistro =
+    suspend fun registrar(nombre: String, apellido: String, correo: String, contrasena: String): ResultadoRegistro =
         withContext(Dispatchers.IO) {
             val correoNormalizado = correo.trim().lowercase()
             val existente = usuarioDao.buscarPorCorreo(correoNormalizado)
@@ -44,6 +44,7 @@ class RepositorioAutenticacion(
             val nuevoUsuario = UsuarioEntity(
                 id = System.currentTimeMillis(),
                 nombre = nombre.trim(),
+                apellido = apellido.trim(),
                 correo = correoNormalizado,
                 contrasena = contrasena
             )
