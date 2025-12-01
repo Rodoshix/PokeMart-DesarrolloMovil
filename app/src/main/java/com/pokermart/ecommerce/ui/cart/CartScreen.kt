@@ -8,15 +8,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,6 +56,7 @@ fun CartScreen(
     onVolver: () -> Unit,
     onIrProductos: () -> Unit,
     onIrDirecciones: () -> Unit,
+    onIrCheckout: () -> Unit = {},
     modifier: Modifier = Modifier
  ) {
     val estado by viewModel.estado.collectAsState()
@@ -150,17 +150,15 @@ fun CartScreen(
             }
 
             else -> {
-                LazyColumn(
+                val scrollState = rememberScrollState()
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = 16.dp,
-                        vertical = 12.dp
-                    )
+                        .padding(innerPadding)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(estado.items) { item ->
+                    estado.items.forEach { item ->
                         CartItemCard(
                             item = item,
                             onIncrementar = { viewModel.incrementar(item.id) },
@@ -168,126 +166,49 @@ fun CartScreen(
                             onEliminar = { viewModel.eliminar(item.id) }
                         )
                     }
-                    item {
-                        MetodoPagoSection(
-                            seleccionado = estado.metodoPago,
-                            onSelect = viewModel::seleccionarMetodoPago
-                        )
-                    }
-                    item {
-                        TotalesCard(
-                            subtotal = estado.subtotal,
-                            impuesto = estado.impuesto,
-                            envio = estado.envio,
-                            servicio = estado.servicio,
-                            total = estado.total,
-                            cumpleMinimo = estado.cumpleMinimo,
-                            minimoCompra = estado.minimoCompra
-                        )
-                    }
-                    item {
-                        Column(
+                    TotalesCard(
+                        subtotal = estado.subtotal,
+                        impuesto = estado.impuesto,
+                        envio = estado.envio,
+                        servicio = estado.servicio,
+                        total = estado.total,
+                        cumpleMinimo = estado.cumpleMinimo,
+                        minimoCompra = estado.minimoCompra
+                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Total",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = formatearPrecio(estado.total),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Button(
-                                onClick = viewModel::confirmarCompra,
-                                enabled = estado.items.isNotEmpty(),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Confirmar compra")
-                            }
-                            Button(
-                                onClick = viewModel::vaciar,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Vaciar carrito")
-                            }
+                            Text(
+                                text = "Total",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = formatearPrecio(estado.total),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Button(
+                            onClick = onIrCheckout,
+                            enabled = estado.items.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ir a checkout")
+                        }
+                        Button(
+                            onClick = viewModel::vaciar,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Vaciar carrito")
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun MetodoPagoSection(
-    seleccionado: MetodoPago?,
-    onSelect: (MetodoPago) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "Metodo de pago",
-            style = MaterialTheme.typography.titleMedium
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            MetodoPago.values().forEach { metodo ->
-                PaymentChip(
-                    label = metodo.etiqueta,
-                    seleccionado = seleccionado == metodo,
-                    onClick = { onSelect(metodo) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PaymentChip(
-    label: String,
-    seleccionado: Boolean,
-    onClick: () -> Unit
-) {
-    OutlinedCard(
-        onClick = onClick,
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = if (seleccionado) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        border = if (seleccionado) {
-            CardDefaults.outlinedCardBorder(true)
-        } else {
-            CardDefaults.outlinedCardBorder(false)
-        }
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.ShoppingBag,
-                contentDescription = null
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-            )
         }
     }
 }
