@@ -36,26 +36,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.MapView
-import com.mapbox.maps.Style
+import android.location.Location
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 import com.pokermart.ecommerce.data.model.Direccion
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.text.font.FontWeight
 import java.text.NumberFormat
 import java.util.Locale
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,6 +151,14 @@ fun CheckoutScreen(
                 MapaRuta(
                     lat = estado.destinoLat,
                     lon = estado.destinoLon,
+                    fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context),
+                    ruta = estado.ruta,
+                    onRutaNecesaria = { origen, destino, apiKey ->
+                        viewModel.solicitarRuta(origen, destino, apiKey)
+                    },
+                    onOrigenDetectado = { origen ->
+                        viewModel.actualizarOrigen(origen)
+                    },
                     solicitarPermiso = {
                         val granted = ContextCompat.checkSelfPermission(
                             context,
@@ -258,9 +277,34 @@ private fun DireccionesSection(
 private fun MapaRuta(
     lat: Double?,
     lon: Double?,
+    fusedLocationProviderClient: com.google.android.gms.location.FusedLocationProviderClient,
+    ruta: List<LatLng>,
+    onRutaNecesaria: (LatLng, LatLng, String) -> Unit,
+    onOrigenDetectado: (LatLng?) -> Unit,
     solicitarPermiso: () -> Unit
 ) {
-    val destino = if (lat != null && lon != null) Point.fromLngLat(lon, lat) else null
+    val destino = if (lat != null && lon != null) LatLng(lat, lon) else null
+    val context = LocalContext.current
+    var origen by remember { mutableStateOf<LatLng?>(null) }
+    LaunchedEffect(destino) {
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            val loc = fusedLocationProviderClient.awaitCurrentLocation()
+            origen = loc?.let { LatLng(it.latitude, it.longitude) }
+            onOrigenDetectado(origen)
+        } else {
+            onOrigenDetectado(null)
+        }
+    }
+    val apiKey = stringResource(id = com.pokermart.ecommerce.R.string.google_maps_key)
+    LaunchedEffect(destino, origen) {
+        if (origen != null && destino != null) {
+            onRutaNecesaria(origen!!, destino, apiKey)
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -283,37 +327,27 @@ private fun MapaRuta(
                     Text("Selecciona una direccion o retiro en tienda.")
                 }
             } else {
-                MapBoxPreview(destino)
+                val cameraPositionState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(destino, 13f)
+                }
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        compassEnabled = true,
+                        myLocationButtonEnabled = false
+                    )
+                ) {
+                    Marker(state = rememberMarkerState(position = destino), title = "Destino")
+                    origen?.let {
+                        Marker(state = rememberMarkerState(position = it), title = "Tu ubicacion")
+                        val puntos = if (ruta.isNotEmpty()) ruta else listOf(it, destino)
+                        Polyline(points = puntos)
+                    }
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun MapBoxPreview(destino: Point) {
-    val context = LocalContext.current
-    val mapView = remember { MapView(context) }
-    DisposableEffect(mapView) {
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
-            mapView.getMapboxMap().setCamera(
-                CameraOptions.Builder()
-                    .center(destino)
-                    .zoom(14.0)
-                    .build()
-            )
-        }
-        onDispose {
-            mapView.onDestroy()
-        }
-    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        androidx.compose.ui.viewinterop.AndroidView(factory = { mapView }, modifier = Modifier.matchParentSize())
-        Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Destino",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.align(Alignment.Center)
-        )
     }
 }
 
@@ -371,3 +405,16 @@ private fun formatCurrency(valor: Double): String {
     formato.minimumFractionDigits = 0
     return formato.format(valor)
 }
+
+private suspend fun com.google.android.gms.location.FusedLocationProviderClient.awaitCurrentLocation(): Location? =
+    suspendCancellableCoroutine { continuation ->
+        val tokenSource = CancellationTokenSource()
+        val task = this.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, tokenSource.token)
+        task.addOnSuccessListener { location ->
+            if (continuation.isActive) continuation.resume(location)
+        }
+        task.addOnFailureListener {
+            if (continuation.isActive) continuation.resume(null)
+        }
+        continuation.invokeOnCancellation { tokenSource.cancel() }
+    }

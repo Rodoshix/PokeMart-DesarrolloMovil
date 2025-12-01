@@ -2,6 +2,7 @@ package com.pokermart.ecommerce.ui.checkout
 
 import com.pokermart.ecommerce.data.model.Direccion
 import com.pokermart.ecommerce.ui.cart.MetodoPago
+import com.google.android.gms.maps.model.LatLng
 
 enum class MetodoEntrega { RETIRO_TIENDA, ENVIO }
 
@@ -19,5 +20,8 @@ data class CheckoutUiState(
     val mensajeError: String? = null,
     val mensajeExito: String? = null,
     val destinoLat: Double? = null,
-    val destinoLon: Double? = null
+    val destinoLon: Double? = null,
+    val origenLat: Double? = null,
+    val origenLon: Double? = null,
+    val ruta: List<LatLng> = emptyList()
 )

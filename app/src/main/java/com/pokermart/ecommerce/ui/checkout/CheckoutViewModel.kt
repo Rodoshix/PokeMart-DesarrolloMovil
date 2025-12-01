@@ -10,12 +10,18 @@ import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.cart.MetodoPago
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class CheckoutViewModel(
     private val repositorioCarrito: RepositorioCarrito,
@@ -107,7 +113,8 @@ class CheckoutViewModel(
                 envio = envio,
                 total = total,
                 destinoLat = if (metodo == MetodoEntrega.RETIRO_TIENDA) mallLat else it.destinoLat,
-                destinoLon = if (metodo == MetodoEntrega.RETIRO_TIENDA) mallLon else it.destinoLon
+                destinoLon = if (metodo == MetodoEntrega.RETIRO_TIENDA) mallLon else it.destinoLon,
+                ruta = emptyList()
             )
         }
     }
@@ -121,8 +128,31 @@ class CheckoutViewModel(
                 envio = envio,
                 total = total,
                 destinoLat = lat ?: mallLat,
-                destinoLon = lon ?: mallLon
+                destinoLon = lon ?: mallLon,
+                ruta = emptyList()
             )
+        }
+    }
+
+    fun actualizarOrigen(origen: LatLng?) {
+        _estado.update {
+            it.copy(
+                origenLat = origen?.latitude,
+                origenLon = origen?.longitude,
+                ruta = emptyList()
+            )
+        }
+    }
+
+    fun solicitarRuta(origen: LatLng?, destino: LatLng?, apiKey: String) {
+        if (origen == null || destino == null) return
+        viewModelScope.launch {
+            val puntos = obtenerRuta(origen, destino, apiKey)
+            if (puntos != null) {
+                _estado.update { it.copy(ruta = puntos, mensajeError = null) }
+            } else {
+                _estado.update { it.copy(mensajeError = "No pudimos calcular la ruta.") }
+            }
         }
     }
 
@@ -162,6 +192,61 @@ class CheckoutViewModel(
             }
             onSuccess()
         }
+    }
+
+    private suspend fun obtenerRuta(origen: LatLng, destino: LatLng, apiKey: String): List<LatLng>? =
+        withContext(Dispatchers.IO) {
+            try {
+                val url =
+                    "https://maps.googleapis.com/maps/api/directions/json?origin=${origen.latitude},${origen.longitude}&destination=${destino.latitude},${destino.longitude}&mode=driving&key=$apiKey"
+                val conexion = URL(url).openConnection() as HttpURLConnection
+                conexion.requestMethod = "GET"
+                conexion.connectTimeout = 5000
+                conexion.readTimeout = 5000
+                val respuesta = conexion.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(respuesta)
+                val routes = json.getJSONArray("routes")
+                if (routes.length() == 0) return@withContext null
+                val poly = routes.getJSONObject(0).getJSONObject("overview_polyline").getString("points")
+                decodePoly(poly)
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+    private fun decodePoly(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
+            lat += dlat
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
+            lng += dlng
+            val latLng = LatLng(
+                lat.toDouble() / 1E5,
+                lng.toDouble() / 1E5
+            )
+            poly.add(latLng)
+        }
+        return poly
     }
 
     fun limpiarMensaje() {
