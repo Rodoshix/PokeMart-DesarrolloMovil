@@ -21,6 +21,8 @@ data class CheckoutUiState(
     val mensajeExito: String? = null,
     val destinoLat: Double? = null,
     val destinoLon: Double? = null,
+    val tiendaLat: Double = -33.52164,
+    val tiendaLon: Double = -70.59867,
     val origenLat: Double? = null,
     val origenLon: Double? = null,
     val ruta: List<LatLng> = emptyList()

@@ -153,6 +153,9 @@ fun CheckoutScreen(
                     lon = estado.destinoLon,
                     fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context),
                     ruta = estado.ruta,
+                    metodoEntrega = estado.metodoEntrega,
+                    tiendaLat = estado.tiendaLat,
+                    tiendaLon = estado.tiendaLon,
                     onRutaNecesaria = { origen, destino, apiKey ->
                         viewModel.solicitarRuta(origen, destino, apiKey)
                     },
@@ -279,6 +282,9 @@ private fun MapaRuta(
     lon: Double?,
     fusedLocationProviderClient: com.google.android.gms.location.FusedLocationProviderClient,
     ruta: List<LatLng>,
+    metodoEntrega: MetodoEntrega?,
+    tiendaLat: Double,
+    tiendaLon: Double,
     onRutaNecesaria: (LatLng, LatLng, String) -> Unit,
     onOrigenDetectado: (LatLng?) -> Unit,
     solicitarPermiso: () -> Unit
@@ -286,23 +292,32 @@ private fun MapaRuta(
     val destino = if (lat != null && lon != null) LatLng(lat, lon) else null
     val context = LocalContext.current
     var origen by remember { mutableStateOf<LatLng?>(null) }
-    LaunchedEffect(destino) {
-        val granted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        if (granted) {
-            val loc = fusedLocationProviderClient.awaitCurrentLocation()
-            origen = loc?.let { LatLng(it.latitude, it.longitude) }
-            onOrigenDetectado(origen)
-        } else {
-            onOrigenDetectado(null)
-        }
-    }
     val apiKey = stringResource(id = com.pokermart.ecommerce.R.string.google_maps_key)
-    LaunchedEffect(destino, origen) {
-        if (origen != null && destino != null) {
-            onRutaNecesaria(origen!!, destino, apiKey)
+
+    LaunchedEffect(destino, metodoEntrega) {
+        if (metodoEntrega == MetodoEntrega.RETIRO_TIENDA) {
+            // Origen es la ubicacion del usuario, destino tienda
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                val loc = fusedLocationProviderClient.awaitCurrentLocation()
+                origen = loc?.let { LatLng(it.latitude, it.longitude) }
+                onOrigenDetectado(origen)
+                if (origen != null && destino != null) {
+                    onRutaNecesaria(origen!!, destino, apiKey)
+                }
+            } else {
+                onOrigenDetectado(null)
+            }
+        } else if (metodoEntrega == MetodoEntrega.ENVIO) {
+            // Origen es la tienda, destino la direccion seleccionada
+            origen = LatLng(tiendaLat, tiendaLon)
+            onOrigenDetectado(origen)
+            if (destino != null) {
+                onRutaNecesaria(origen!!, destino, apiKey)
+            }
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -340,9 +355,9 @@ private fun MapaRuta(
                     )
                 ) {
                     Marker(state = rememberMarkerState(position = destino), title = "Destino")
-                    origen?.let {
-                        Marker(state = rememberMarkerState(position = it), title = "Tu ubicacion")
-                        val puntos = if (ruta.isNotEmpty()) ruta else listOf(it, destino)
+                    origen?.let { orig ->
+                        Marker(state = rememberMarkerState(position = orig), title = if (metodoEntrega == MetodoEntrega.RETIRO_TIENDA) "Tu ubicacion" else "Tienda")
+                        val puntos = if (ruta.isNotEmpty()) ruta else listOf(orig, destino)
                         Polyline(points = puntos)
                     }
                 }

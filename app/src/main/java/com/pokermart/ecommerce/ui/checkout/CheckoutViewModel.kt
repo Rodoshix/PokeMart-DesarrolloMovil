@@ -67,8 +67,19 @@ class CheckoutViewModel(
                     it.copy(
                         direcciones = dirs,
                         direccionSeleccionadaId = it.direccionSeleccionadaId ?: dirs.firstOrNull()?.id,
-                        destinoLat = it.destinoLat ?: dirs.firstOrNull()?.latitud ?: mallLat,
-                        destinoLon = it.destinoLon ?: dirs.firstOrNull()?.longitud ?: mallLon
+                        destinoLat = when (it.metodoEntrega) {
+                            MetodoEntrega.RETIRO_TIENDA -> mallLat
+                            MetodoEntrega.ENVIO -> it.destinoLat ?: dirs.firstOrNull()?.latitud ?: mallLat
+                            null -> it.destinoLat ?: mallLat
+                        },
+                        destinoLon = when (it.metodoEntrega) {
+                            MetodoEntrega.RETIRO_TIENDA -> mallLon
+                            MetodoEntrega.ENVIO -> it.destinoLon ?: dirs.firstOrNull()?.longitud ?: mallLon
+                            null -> it.destinoLon ?: mallLon
+                        },
+                        tiendaLat = mallLat,
+                        tiendaLon = mallLon,
+                        ruta = emptyList()
                     )
                 }
             }
@@ -105,15 +116,24 @@ class CheckoutViewModel(
     }
 
     fun seleccionarEntrega(metodo: MetodoEntrega) {
-        _estado.update {
-            val envio = calcularEnvio(it.subtotal, metodo, it.direccionSeleccionadaId)
-            val total = it.subtotal + it.impuesto + envio + it.servicio
-            it.copy(
+        _estado.update { actual ->
+            val destinoSeleccionado: Pair<Double?, Double?> = if (metodo == MetodoEntrega.RETIRO_TIENDA) {
+                Pair(mallLat, mallLon)
+            } else {
+                val dir = direccionesActuales.firstOrNull { it.id == actual.direccionSeleccionadaId }
+                    ?: direccionesActuales.firstOrNull()
+                Pair(dir?.latitud ?: actual.destinoLat ?: mallLat, dir?.longitud ?: actual.destinoLon ?: mallLon)
+            }
+            val envio = calcularEnvio(actual.subtotal, metodo, actual.direccionSeleccionadaId)
+            val total = actual.subtotal + actual.impuesto + envio + actual.servicio
+            actual.copy(
                 metodoEntrega = metodo,
                 envio = envio,
                 total = total,
-                destinoLat = if (metodo == MetodoEntrega.RETIRO_TIENDA) mallLat else it.destinoLat,
-                destinoLon = if (metodo == MetodoEntrega.RETIRO_TIENDA) mallLon else it.destinoLon,
+                destinoLat = destinoSeleccionado.first,
+                destinoLon = destinoSeleccionado.second,
+                tiendaLat = mallLat,
+                tiendaLon = mallLon,
                 ruta = emptyList()
             )
         }
@@ -127,8 +147,8 @@ class CheckoutViewModel(
                 direccionSeleccionadaId = id,
                 envio = envio,
                 total = total,
-                destinoLat = lat ?: mallLat,
-                destinoLon = lon ?: mallLon,
+                destinoLat = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLat else lat ?: mallLat,
+                destinoLon = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLon else lon ?: mallLon,
                 ruta = emptyList()
             )
         }
