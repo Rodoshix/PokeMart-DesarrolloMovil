@@ -294,30 +294,33 @@ private fun MapaRuta(
     var origen by remember { mutableStateOf<LatLng?>(null) }
     val apiKey = stringResource(id = com.pokermart.ecommerce.R.string.google_maps_key)
 
-    LaunchedEffect(destino, metodoEntrega) {
-        if (metodoEntrega == MetodoEntrega.RETIRO_TIENDA) {
-            // Origen es la ubicacion del usuario, destino tienda
-            val granted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-            if (granted) {
-                val loc = fusedLocationProviderClient.awaitCurrentLocation()
-                origen = loc?.let { LatLng(it.latitude, it.longitude) }
-                onOrigenDetectado(origen)
-                if (origen != null && destino != null) {
-                    onRutaNecesaria(origen!!, destino, apiKey)
+    LaunchedEffect(destino?.latitude, destino?.longitude, metodoEntrega, tiendaLat, tiendaLon) {
+        origen = null
+        onOrigenDetectado(null)
+        when (metodoEntrega) {
+            MetodoEntrega.RETIRO_TIENDA -> {
+                val granted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    val loc = fusedLocationProviderClient.awaitCurrentLocation()
+                    origen = loc?.let { LatLng(it.latitude, it.longitude) }
+                    onOrigenDetectado(origen)
+                    if (origen != null && destino != null) {
+                        onRutaNecesaria(origen!!, destino, apiKey)
+                    }
                 }
-            } else {
-                onOrigenDetectado(null)
             }
-        } else if (metodoEntrega == MetodoEntrega.ENVIO) {
-            // Origen es la tienda, destino la direccion seleccionada
-            origen = LatLng(tiendaLat, tiendaLon)
-            onOrigenDetectado(origen)
-            if (destino != null) {
-                onRutaNecesaria(origen!!, destino, apiKey)
+            MetodoEntrega.ENVIO -> {
+                val origenTienda = LatLng(tiendaLat, tiendaLon)
+                origen = origenTienda
+                onOrigenDetectado(origenTienda)
+                if (destino != null) {
+                    onRutaNecesaria(origenTienda, destino, apiKey)
+                }
             }
+            null -> {}
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -356,7 +359,12 @@ private fun MapaRuta(
                 ) {
                     Marker(state = rememberMarkerState(position = destino), title = "Destino")
                     origen?.let { orig ->
-                        Marker(state = rememberMarkerState(position = orig), title = if (metodoEntrega == MetodoEntrega.RETIRO_TIENDA) "Tu ubicacion" else "Tienda")
+                        val title = when (metodoEntrega) {
+                            MetodoEntrega.RETIRO_TIENDA -> "Tu ubicacion"
+                            MetodoEntrega.ENVIO -> "Tienda"
+                            else -> "Origen"
+                        }
+                        Marker(state = rememberMarkerState(position = orig), title = title)
                         val puntos = if (ruta.isNotEmpty()) ruta else listOf(orig, destino)
                         Polyline(points = puntos)
                     }

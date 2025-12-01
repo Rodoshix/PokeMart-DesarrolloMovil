@@ -69,13 +69,13 @@ class CheckoutViewModel(
                         direccionSeleccionadaId = it.direccionSeleccionadaId ?: dirs.firstOrNull()?.id,
                         destinoLat = when (it.metodoEntrega) {
                             MetodoEntrega.RETIRO_TIENDA -> mallLat
-                            MetodoEntrega.ENVIO -> it.destinoLat ?: dirs.firstOrNull()?.latitud ?: mallLat
-                            null -> it.destinoLat ?: mallLat
+                            MetodoEntrega.ENVIO -> dirs.firstOrNull { dir -> dir.id == it.direccionSeleccionadaId }?.latitud
+                            null -> null
                         },
                         destinoLon = when (it.metodoEntrega) {
                             MetodoEntrega.RETIRO_TIENDA -> mallLon
-                            MetodoEntrega.ENVIO -> it.destinoLon ?: dirs.firstOrNull()?.longitud ?: mallLon
-                            null -> it.destinoLon ?: mallLon
+                            MetodoEntrega.ENVIO -> dirs.firstOrNull { dir -> dir.id == it.direccionSeleccionadaId }?.longitud
+                            null -> null
                         },
                         tiendaLat = mallLat,
                         tiendaLon = mallLon,
@@ -117,12 +117,12 @@ class CheckoutViewModel(
 
     fun seleccionarEntrega(metodo: MetodoEntrega) {
         _estado.update { actual ->
+            val dir = direccionesActuales.firstOrNull { it.id == actual.direccionSeleccionadaId }
+                ?: direccionesActuales.firstOrNull()
             val destinoSeleccionado: Pair<Double?, Double?> = if (metodo == MetodoEntrega.RETIRO_TIENDA) {
                 Pair(mallLat, mallLon)
             } else {
-                val dir = direccionesActuales.firstOrNull { it.id == actual.direccionSeleccionadaId }
-                    ?: direccionesActuales.firstOrNull()
-                Pair(dir?.latitud ?: actual.destinoLat ?: mallLat, dir?.longitud ?: actual.destinoLon ?: mallLon)
+                Pair(dir?.latitud, dir?.longitud)
             }
             val envio = calcularEnvio(actual.subtotal, metodo, actual.direccionSeleccionadaId)
             val total = actual.subtotal + actual.impuesto + envio + actual.servicio
@@ -134,6 +134,8 @@ class CheckoutViewModel(
                 destinoLon = destinoSeleccionado.second,
                 tiendaLat = mallLat,
                 tiendaLon = mallLon,
+                origenLat = null,
+                origenLon = null,
                 ruta = emptyList()
             )
         }
@@ -147,8 +149,10 @@ class CheckoutViewModel(
                 direccionSeleccionadaId = id,
                 envio = envio,
                 total = total,
-                destinoLat = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLat else lat ?: mallLat,
-                destinoLon = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLon else lon ?: mallLon,
+                destinoLat = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLat else lat,
+                destinoLon = if (it.metodoEntrega == MetodoEntrega.RETIRO_TIENDA) mallLon else lon,
+                origenLat = if (it.metodoEntrega == MetodoEntrega.ENVIO) mallLat else null,
+                origenLon = if (it.metodoEntrega == MetodoEntrega.ENVIO) mallLon else null,
                 ruta = emptyList()
             )
         }
