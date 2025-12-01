@@ -10,11 +10,17 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pokermart.ecommerce.data.model.Producto
+import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -38,14 +44,19 @@ data class HomeUiState(
     val address: String = "Debe ingresar Direccion",
     val carouselImages: List<String> = emptyList(),
     val categories: List<CategoryItem> = emptyList(),
-    val snackbarMessage: String? = null
+    val searchResults: List<ProductItem> = emptyList(),
+    val snackbarMessage: String? = null,
+    val cartCount: Int = 0
 )
 
 class HomeViewModel(
     private val sessionManager: SessionManager,
     repositorioCatalogo: RepositorioCatalogo,
-    private val repositorioDirecciones: RepositorioDirecciones
+    private val repositorioDirecciones: RepositorioDirecciones,
+    private val repositorioCarrito: RepositorioCarrito
 ) : ViewModel() {
+
+    private val searchQueryFlow = MutableStateFlow("")
 
     val destacados: Flow<List<ProductItem>> = repositorioCatalogo
         .observarDestacados()
@@ -59,6 +70,8 @@ class HomeViewModel(
     init {
         cargarEstadoInicial()
         observarDireccionPredeterminada()
+        observarResultadosBusqueda(repositorioCatalogo)
+        observarCantidadCarrito()
     }
 
     private fun cargarEstadoInicial() {
@@ -90,8 +103,21 @@ class HomeViewModel(
         }
     }
 
+    private fun observarCantidadCarrito() {
+        val usuarioId = sessionManager.obtenerSesion()?.id ?: run {
+            uiState = uiState.copy(cartCount = 0)
+            return
+        }
+        viewModelScope.launch {
+            repositorioCarrito.observarCantidadTotal(usuarioId).collectLatest { cantidad ->
+                uiState = uiState.copy(cartCount = cantidad)
+            }
+        }
+    }
+
     fun onSearchChange(query: String) {
         uiState = uiState.copy(searchQuery = query)
+        searchQueryFlow.value = query
     }
 
     fun onBellClick() {
@@ -116,6 +142,26 @@ class HomeViewModel(
 
     private fun mostrarMensaje(mensaje: String) {
         uiState = uiState.copy(snackbarMessage = mensaje)
+    }
+
+    private fun observarResultadosBusqueda(repositorioCatalogo: RepositorioCatalogo) {
+        viewModelScope.launch {
+            searchQueryFlow
+                .debounce(250)
+                .map { it.trim() }
+                .distinctUntilChanged()
+                .flatMapLatest { query ->
+                    if (query.isEmpty()) {
+                        flowOf(emptyList())
+                    } else {
+                        repositorioCatalogo.buscarProductos(query)
+                            .map { productos -> productos.map { it.aProductItem() } }
+                    }
+                }
+                .collectLatest { resultados ->
+                    uiState = uiState.copy(searchResults = resultados)
+                }
+        }
     }
 
     private fun Producto.aProductItem(): ProductItem = ProductItem(

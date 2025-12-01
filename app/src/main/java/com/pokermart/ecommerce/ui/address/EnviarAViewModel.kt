@@ -71,6 +71,24 @@ class EnviarAViewModel(
         }
     }
 
+    fun editarDireccion(id: Long) {
+        val direccion = direccionesActuales.firstOrNull { it.id == id } ?: return
+        _uiState.update {
+            it.copy(
+                mostrarDialogo = true,
+                formulario = DireccionFormState(
+                    id = direccion.id,
+                    etiqueta = direccion.etiqueta.orEmpty(),
+                    direccion = direccion.direccion,
+                    referencia = direccion.referencia.orEmpty(),
+                    latitud = direccion.latitud,
+                    longitud = direccion.longitud,
+                    marcarComoPredeterminada = direccion.esPredeterminada
+                )
+            )
+        }
+    }
+
     fun solicitarEliminarDireccion(id: Long) {
         _uiState.update {
             it.copy(confirmacionEliminarId = id, eliminando = false)
@@ -108,6 +126,28 @@ class EnviarAViewModel(
         }
     }
 
+    fun actualizarRegion(valor: String) {
+        _uiState.update {
+            it.copy(
+                formulario = it.formulario.copy(
+                    region = valor,
+                    errorRegion = null
+                )
+            )
+        }
+    }
+
+    fun actualizarCiudad(valor: String) {
+        _uiState.update {
+            it.copy(
+                formulario = it.formulario.copy(
+                    ciudad = valor,
+                    errorCiudad = null
+                )
+            )
+        }
+    }
+
     fun actualizarDireccion(valor: String) {
         _uiState.update {
             it.copy(formulario = it.formulario.copy(direccion = valor, errorDireccion = null))
@@ -140,7 +180,21 @@ class EnviarAViewModel(
             return
         }
         val formulario = _uiState.value.formulario
+        val regionTexto = formulario.region.trim()
+        val ciudadTexto = formulario.ciudad.trim()
         val direccionTexto = formulario.direccion.trim()
+        if (regionTexto.isEmpty()) {
+            _uiState.update {
+                it.copy(formulario = formulario.copy(errorRegion = "La region es obligatoria."))
+            }
+            return
+        }
+        if (ciudadTexto.isEmpty()) {
+            _uiState.update {
+                it.copy(formulario = formulario.copy(errorCiudad = "La ciudad es obligatoria."))
+            }
+            return
+        }
         if (direccionTexto.isEmpty()) {
             _uiState.update {
                 it.copy(formulario = formulario.copy(errorDireccion = "La direccion es obligatoria."))
@@ -152,11 +206,23 @@ class EnviarAViewModel(
         val direccionExistente = formulario.id?.let { id ->
             direccionesActuales.firstOrNull { it.id == id }
         }
+        if (!formulario.marcarComoPredeterminada) {
+            val existeOtraPredeterminada = direccionesActuales.any { direccion ->
+                direccion.esPredeterminada && (formulario.id == null || direccion.id != formulario.id)
+            }
+            if (!existeOtraPredeterminada) {
+                _uiState.update {
+                    it.copy(mensaje = "Necesitas dejar al menos una direccion predeterminada.")
+                }
+                return
+            }
+        }
+        val direccionCompuesta = "$regionTexto, $ciudadTexto, $direccionTexto"
         val direccion = Direccion(
             id = formulario.id ?: 0L,
             usuarioId = userId,
             etiqueta = etiqueta,
-            direccion = direccionTexto,
+            direccion = direccionCompuesta,
             referencia = referencia,
             latitud = formulario.latitud ?: direccionExistente?.latitud,
             longitud = formulario.longitud ?: direccionExistente?.longitud,

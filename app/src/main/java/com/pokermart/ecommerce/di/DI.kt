@@ -6,9 +6,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.pokermart.ecommerce.data.database.PokeMartDatabase
 import com.pokermart.ecommerce.data.repository.RepositorioAutenticacion
+import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
+import com.pokermart.ecommerce.ui.cart.CartViewModel
 import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.address.EnviarAViewModel
 import com.pokermart.ecommerce.ui.login.LoginViewModel
@@ -39,6 +41,9 @@ object DI {
     private val repositorioDirecciones: RepositorioDirecciones by lazy {
         RepositorioDirecciones(baseDeDatos.direccionDao())
     }
+    private val repositorioCarrito: RepositorioCarrito by lazy {
+        RepositorioCarrito(baseDeDatos.carritoDao())
+    }
 
     fun inicializar(app: Application) {
         if (this::aplicacion.isInitialized) return
@@ -53,6 +58,7 @@ object DI {
 
     fun obtenerRepositorioCatalogo(): RepositorioCatalogo = repositorioCatalogo
     fun obtenerRepositorioDirecciones(): RepositorioDirecciones = repositorioDirecciones
+    fun obtenerRepositorioCarrito(): RepositorioCarrito = repositorioCarrito
 
     internal fun alcanceGlobal(): CoroutineScope = alcanceAplicacion
 
@@ -82,6 +88,8 @@ object DI {
         initializer {
             ProductOptionsViewModel(
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
+                repositorioCarrito = obtenerRepositorioCarrito(),
+                sessionManager = obtenerGestorSesion(),
                 productoId = productoId
             )
         }
@@ -121,7 +129,19 @@ object DI {
             HomeViewModel(
                 sessionManager = obtenerGestorSesion(),
                 repositorioCatalogo = obtenerRepositorioCatalogo(),
-                repositorioDirecciones = obtenerRepositorioDirecciones()
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
+                repositorioCarrito = obtenerRepositorioCarrito()
+            )
+        }
+    }
+
+    fun cartViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            CartViewModel(
+                repositorioCarrito = obtenerRepositorioCarrito(),
+                repositorioCatalogo = obtenerRepositorioCatalogo(),
+                repositorioDirecciones = obtenerRepositorioDirecciones(),
+                sessionManager = obtenerGestorSesion()
             )
         }
     }

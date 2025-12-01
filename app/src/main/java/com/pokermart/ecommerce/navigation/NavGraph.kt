@@ -14,6 +14,8 @@ import com.pokermart.ecommerce.di.DI
 import com.pokermart.ecommerce.pref.SessionManager
 import com.pokermart.ecommerce.ui.address.EnviarAScreen
 import com.pokermart.ecommerce.ui.address.EnviarAViewModel
+import com.pokermart.ecommerce.ui.cart.CartScreen
+import com.pokermart.ecommerce.ui.cart.CartViewModel
 import com.pokermart.ecommerce.ui.home.HomeRoute
 import com.pokermart.ecommerce.ui.home.HomeViewModel
 import com.pokermart.ecommerce.ui.login.LoginScreen
@@ -37,6 +39,7 @@ sealed class Destino(val ruta: String) {
     data object Home : Destino("home")
     data object Registro : Destino("registro")
     data object EnviarA : Destino("enviarA")
+    data object Carrito : Destino("carrito")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
             "productos/$categoriaId/${Uri.encode(categoriaNombre)}"
@@ -129,6 +132,11 @@ fun NavGraph(
                         Destino.OpcionesProducto.crearRuta(producto.id)
                     )
                 },
+                onCartClick = {
+                    navController.navigate(Destino.Carrito.ruta) {
+                        launchSingleTop = true
+                    }
+                },
                 onProfileClick = {
                     val usuarioId = sessionManager.obtenerSesion()?.id
                     if (usuarioId != null) {
@@ -146,6 +154,35 @@ fun NavGraph(
                 viewModel = enviarAViewModel,
                 onBack = { navController.popBackStack() },
                 onConfirm = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Destino.Carrito.ruta) {
+            val cartViewModel = viewModel<CartViewModel>(
+                factory = DI.cartViewModelFactory()
+            )
+            CartScreen(
+                viewModel = cartViewModel,
+                onVolver = {
+                    val volvio = navController.popBackStack()
+                    if (!volvio) {
+                        navController.navigate(Destino.Home.ruta) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onIrProductos = {
+                    navController.navigate(Destino.Home.ruta) {
+                        popUpTo(Destino.Home.ruta) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onIrDirecciones = {
+                    navController.navigate(Destino.EnviarA.ruta) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -172,7 +209,15 @@ fun NavGraph(
                         Destino.OpcionesProducto.crearRuta(producto.id)
                     )
                 },
-                onVolver = { navController.popBackStack(Destino.Home.ruta, false) }
+                onVolver = {
+                    val volvio = navController.popBackStack(Destino.Home.ruta, false)
+                    if (!volvio) {
+                        navController.navigate(Destino.Home.ruta) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    }
+                }
             )
         }
 
@@ -189,7 +234,26 @@ fun NavGraph(
             )
             ProductOptionsScreen(
                 viewModel = opcionesViewModel,
-                onVolver = { navController.popBackStack() }
+                onVolver = {
+                    val volvio = navController.popBackStack()
+                    if (!volvio) {
+                        navController.navigate(Destino.Home.ruta) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onIrPerfil = {
+                    val usuarioId = sessionManager.obtenerSesion()?.id
+                    if (usuarioId != null) {
+                        navController.navigate(Destino.Perfil.crearRuta(usuarioId))
+                    }
+                },
+                onIrCarrito = {
+                    navController.navigate(Destino.Carrito.ruta) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -212,7 +276,15 @@ fun NavGraph(
                         popUpTo(0)
                     }
                 },
-                onVolver = { navController.popBackStack() },
+                onVolver = {
+                    val volvio = navController.popBackStack()
+                    if (!volvio) {
+                        navController.navigate(Destino.Home.ruta) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    }
+                },
                 onGestionarDirecciones = {
                     navController.navigate(Destino.EnviarA.ruta)
                 }

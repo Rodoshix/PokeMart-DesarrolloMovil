@@ -118,18 +118,29 @@ class ProfileViewModel(
         val usuarioBase = usuarioActual ?: return
 
         val nombre = _estado.value.nombre.trim()
+        val apellido = _estado.value.apellido.trim()
         val runFormateado = _estado.value.run.trim()
         val runLimpio = limpiarRun(runFormateado)
         val fechaIso = _estado.value.fechaNacimiento
 
         val errorNombre = Validadores.validarCampoObligatorio(nombre, "nombre")
-        val errorRun = if (runLimpio.isNotEmpty()) Validadores.validarRun(runLimpio) else null
+        val errorApellido = when {
+            apellido.isEmpty() -> "El apellido es obligatorio."
+            apellido.length < 2 -> "El apellido debe tener al menos 2 caracteres."
+            else -> null
+        }
+        val errorRun = if (runLimpio.isEmpty()) {
+            "El RUN es obligatorio."
+        } else {
+            Validadores.validarRun(runLimpio)
+        }
         val errorFecha = Validadores.validarFechaNacimientoIso(fechaIso)
 
-        if (errorNombre != null || errorRun != null || errorFecha != null) {
+        if (errorNombre != null || errorApellido != null || errorRun != null || errorFecha != null) {
             _estado.update {
                 it.copy(
                     errorNombre = errorNombre,
+                    errorApellido = errorApellido,
                     errorRun = errorRun,
                     errorFechaNacimiento = errorFecha,
                     mensajeError = null,
@@ -144,7 +155,7 @@ class ProfileViewModel(
         viewModelScope.launch {
             val actualizado = usuarioBase.copy(
                 nombre = nombre,
-                apellido = _estado.value.apellido.trim().takeIf { it.isNotEmpty() },
+                apellido = apellido,
                 region = _estado.value.region.trim().takeIf { it.isNotEmpty() },
                 comuna = _estado.value.comuna.trim().takeIf { it.isNotEmpty() },
                 direccion = _estado.value.direccion.trim().takeIf { it.isNotEmpty() },

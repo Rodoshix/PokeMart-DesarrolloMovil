@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import com.pokermart.ecommerce.ui.common.EstadoVacio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +69,7 @@ fun HomeScreen(
     featuredProducts: List<ProductItem>,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit,
     onCategoryClick: (CategoryItem) -> Unit,
@@ -84,8 +89,10 @@ fun HomeScreen(
             HomeTopBar(
                 searchQuery = state.searchQuery,
                 address = state.address,
+                cartCount = state.cartCount,
                 onSearchChange = onSearchChange,
                 onBellClick = onBellClick,
+                onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
                 onChangeAddress = onChangeAddress
             )
@@ -99,29 +106,54 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            HomeCarousel(images = state.carouselImages)
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Categorias",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
-            )
-            CategoryRow(
-                categories = state.categories,
-                onCategoryClick = onCategoryClick
-            )
-            if (featuredProducts.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
+            val estaBuscando = state.searchQuery.isNotBlank()
+            if (estaBuscando) {
                 Text(
-                    text = "Destacados",
+                    text = "Resultados de \"${state.searchQuery}\"",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
                 )
-                ProductGrid(
-                    productos = featuredProducts,
-                    onProductClick = onProductClick,
-                    modifier = Modifier.weight(1f, fill = true)
+                if (state.searchResults.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = true),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        EstadoVacio(mensaje = "No encontramos productos que coincidan con tu busqueda.")
+                    }
+                } else {
+                    ProductGrid(
+                        productos = state.searchResults,
+                        onProductClick = onProductClick,
+                        modifier = Modifier.weight(1f, fill = true)
+                    )
+                }
+            } else {
+                HomeCarousel(images = state.carouselImages)
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Categorias",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
                 )
+                CategoryRow(
+                    categories = state.categories,
+                    onCategoryClick = onCategoryClick
+                )
+                if (featuredProducts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Destacados",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                    )
+                    ProductGrid(
+                        productos = featuredProducts,
+                        onProductClick = onProductClick,
+                        modifier = Modifier.weight(1f, fill = true)
+                    )
+                }
             }
         }
     }
@@ -132,8 +164,10 @@ fun HomeScreen(
 private fun HomeTopBar(
     searchQuery: String,
     address: String,
+    cartCount: Int,
     onSearchChange: (String) -> Unit,
     onBellClick: () -> Unit,
+    onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChangeAddress: () -> Unit
 ) {
@@ -157,6 +191,25 @@ private fun HomeTopBar(
                 )
             },
             actions = {
+                IconButton(onClick = onCartClick) {
+                    if (cartCount > 0) {
+                        BadgedBox(badge = {
+                            Badge {
+                                Text(text = cartCount.coerceAtMost(99).toString())
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Ver carrito"
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = "Ver carrito"
+                        )
+                    }
+                }
                 IconButton(onClick = onProfileClick) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -389,7 +442,8 @@ fun HomeRoute(
     onChangeAddress: () -> Unit = {},
     onCategoryClick: (CategoryItem) -> Unit = {},
     onProductClick: (ProductItem) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onCartClick: () -> Unit = {}
 ) {
     val state = viewModel.uiState
     val featuredProducts by viewModel.destacados.collectAsState(initial = emptyList())
@@ -398,6 +452,7 @@ fun HomeRoute(
         featuredProducts = featuredProducts,
         onSearchChange = viewModel::onSearchChange,
         onBellClick = viewModel::onBellClick,
+        onCartClick = onCartClick,
         onProfileClick = onProfileClick,
         onChangeAddress = {
             viewModel.onChangeAddress()

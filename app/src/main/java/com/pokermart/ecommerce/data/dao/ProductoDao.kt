@@ -20,6 +20,19 @@ interface ProductoDao {
     @Query("SELECT * FROM productos WHERE destacado = 1 ORDER BY id DESC LIMIT 6")
     fun observarDestacados(): Flow<List<ProductoConOpciones>>
 
+    @Transaction
+    @Query(
+        """
+        SELECT productos.* FROM productos
+        LEFT JOIN categorias ON categorias.id = productos.categoria_id
+        WHERE LOWER(productos.nombre) LIKE '%' || LOWER(:query) || '%'
+           OR LOWER(productos.descripcion) LIKE '%' || LOWER(:query) || '%'
+           OR LOWER(categorias.nombre) LIKE '%' || LOWER(:query) || '%'
+        ORDER BY productos.nombre
+        """
+    )
+    fun buscarPorTexto(query: String): Flow<List<ProductoConOpciones>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodos(productos: List<ProductoEntity>)
 

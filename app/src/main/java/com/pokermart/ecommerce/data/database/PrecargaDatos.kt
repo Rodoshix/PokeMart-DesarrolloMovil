@@ -212,53 +212,53 @@ object PrecargaDatos {
         val opciones = listOf(
             // ===== Medicinas (x1, x5, x15) =====
             OpcionProductoEntity(id = 1100, productoId = 100, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 250),
-            OpcionProductoEntity(id = 1101, productoId = 100, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -100.0, stock = 120),
-            OpcionProductoEntity(id = 1102, productoId = 100, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -400.0, stock = 60),
+            OpcionProductoEntity(id = 1101, productoId = 100, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -50.0, stock = 120),
+            OpcionProductoEntity(id = 1102, productoId = 100, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -300.0, stock = 60),
 
             OpcionProductoEntity(id = 1110, productoId = 101, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 180),
-            OpcionProductoEntity(id = 1111, productoId = 101, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -150.0, stock = 90),
-            OpcionProductoEntity(id = 1112, productoId = 101, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -500.0, stock = 45),
+            OpcionProductoEntity(id = 1111, productoId = 101, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -175.0, stock = 90),
+            OpcionProductoEntity(id = 1112, productoId = 101, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1050.0, stock = 45),
 
             OpcionProductoEntity(id = 1120, productoId = 102, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 160),
-            OpcionProductoEntity(id = 1121, productoId = 102, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -200.0, stock = 75),
-            OpcionProductoEntity(id = 1122, productoId = 102, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -650.0, stock = 35),
+            OpcionProductoEntity(id = 1121, productoId = 102, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -300.0, stock = 75),
+            OpcionProductoEntity(id = 1122, productoId = 102, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1800.0, stock = 35),
 
             OpcionProductoEntity(id = 1130, productoId = 103, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 140),
-            OpcionProductoEntity(id = 1131, productoId = 103, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -350.0, stock = 70),
-            OpcionProductoEntity(id = 1132, productoId = 103, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1100.0,stock = 30),
+            OpcionProductoEntity(id = 1131, productoId = 103, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -625.0, stock = 70),
+            OpcionProductoEntity(id = 1132, productoId = 103, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -3750.0,stock = 30),
 
             OpcionProductoEntity(id = 1140, productoId = 104, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 150),
-            OpcionProductoEntity(id = 1141, productoId = 104, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -250.0, stock = 70),
-            OpcionProductoEntity(id = 1142, productoId = 104, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -800.0, stock = 28),
+            OpcionProductoEntity(id = 1141, productoId = 104, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -375.0, stock = 70),
+            OpcionProductoEntity(id = 1142, productoId = 104, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -2250.0, stock = 28),
 
             // ===== Poké Balls (x1, x5, x15) =====
             OpcionProductoEntity(id = 1200, productoId = 200, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 300),
-            OpcionProductoEntity(id = 1201, productoId = 200, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -100.0, stock = 140),
-            OpcionProductoEntity(id = 1202, productoId = 200, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -300.0, stock = 70),
+            OpcionProductoEntity(id = 1201, productoId = 200, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -300.0, stock = 140),
+            OpcionProductoEntity(id = 1202, productoId = 200, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1800.0, stock = 70),
 
             OpcionProductoEntity(id = 1210, productoId = 201, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 180),
-            OpcionProductoEntity(id = 1211, productoId = 201, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -60.0,  stock = 90),
-            OpcionProductoEntity(id = 1212, productoId = 201, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -180.0, stock = 45),
+            OpcionProductoEntity(id = 1211, productoId = 201, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -75.0,  stock = 90),
+            OpcionProductoEntity(id = 1212, productoId = 201, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -450.0, stock = 45),
 
             OpcionProductoEntity(id = 1220, productoId = 202, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 400),
-            OpcionProductoEntity(id = 1221, productoId = 202, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -40.0,  stock = 180),
-            OpcionProductoEntity(id = 1222, productoId = 202, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -120.0, stock = 90),
+            OpcionProductoEntity(id = 1221, productoId = 202, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -50.0,  stock = 180),
+            OpcionProductoEntity(id = 1222, productoId = 202, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -300.0, stock = 90),
 
             OpcionProductoEntity(id = 1230, productoId = 203, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 260),
-            OpcionProductoEntity(id = 1231, productoId = 203, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -80.0,  stock = 120),
-            OpcionProductoEntity(id = 1232, productoId = 203, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -240.0, stock = 60),
+            OpcionProductoEntity(id = 1231, productoId = 203, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -150.0,  stock = 120),
+            OpcionProductoEntity(id = 1232, productoId = 203, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -900.0, stock = 60),
 
             OpcionProductoEntity(id = 1240, productoId = 204, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 220),
-            OpcionProductoEntity(id = 1241, productoId = 204, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -90.0,  stock = 110),
-            OpcionProductoEntity(id = 1242, productoId = 204, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -270.0, stock = 55),
+            OpcionProductoEntity(id = 1241, productoId = 204, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -250.0,  stock = 110),
+            OpcionProductoEntity(id = 1242, productoId = 204, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1500.0, stock = 55),
 
             OpcionProductoEntity(id = 1250, productoId = 205, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 210),
-            OpcionProductoEntity(id = 1251, productoId = 205, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -90.0,  stock = 100),
-            OpcionProductoEntity(id = 1252, productoId = 205, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -270.0, stock = 50),
+            OpcionProductoEntity(id = 1251, productoId = 205, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -250.0,  stock = 100),
+            OpcionProductoEntity(id = 1252, productoId = 205, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -1500.0, stock = 50),
 
             OpcionProductoEntity(id = 1260, productoId = 206, nombre = "Paquete x1",  descripcion = "Una unidad.",                   precioExtra = 0.0,    stock = 160),
-            OpcionProductoEntity(id = 1261, productoId = 206, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -120.0, stock = 80),
-            OpcionProductoEntity(id = 1262, productoId = 206, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -360.0, stock = 40),
+            OpcionProductoEntity(id = 1261, productoId = 206, nombre = "Paquete x5",  descripcion = "Cinco unidades (descuento).",   precioExtra = -500.0, stock = 80),
+            OpcionProductoEntity(id = 1262, productoId = 206, nombre = "Paquete x15", descripcion = "Quince unidades (ahorro).",     precioExtra = -3000.0, stock = 40),
 
             // ===== MTs (base, rapida, premium) =====
             OpcionProductoEntity(id = 1300, productoId = 300, nombre = "Version base",    descripcion = "Aprendizaje estandar.",     precioExtra = 0.0,    stock = 40),
