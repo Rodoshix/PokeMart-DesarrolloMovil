@@ -40,6 +40,7 @@ fun ProductoEntity.aModelo(opciones: List<OpcionProductoEntity>) = Producto(
     opciones = opciones.map { it.aModelo() }
 )
 
+@Suppress("unused")
 fun Producto.aEntity() = ProductoEntity(
     id = id,
     categoriaId = categoriaId,

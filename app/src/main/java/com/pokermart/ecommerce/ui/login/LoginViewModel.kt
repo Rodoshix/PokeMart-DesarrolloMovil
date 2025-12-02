@@ -37,12 +37,12 @@ class LoginViewModel(
     fun iniciarSesion() {
         val correo = _estado.value.correo
         val contrasena = _estado.value.contrasena
+        // En login no obligamos a validar la seguridad de la contrasena para permitir usuarios precargados.
         val correoError = Validadores.validarCorreo(correo)
-        val contrasenaError = Validadores.validarContrasena(contrasena)
-        if (correoError != null || contrasenaError != null) {
+        if (correoError != null) {
             _estado.value = _estado.value.copy(
                 correoError = correoError,
-                contrasenaError = contrasenaError,
+                contrasenaError = null,
                 mensajeErrorGeneral = null
             )
             return

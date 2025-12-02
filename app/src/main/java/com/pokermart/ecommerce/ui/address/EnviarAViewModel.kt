@@ -126,6 +126,28 @@ class EnviarAViewModel(
         }
     }
 
+    fun actualizarRegion(valor: String) {
+        _uiState.update {
+            it.copy(
+                formulario = it.formulario.copy(
+                    region = valor,
+                    errorRegion = null
+                )
+            )
+        }
+    }
+
+    fun actualizarCiudad(valor: String) {
+        _uiState.update {
+            it.copy(
+                formulario = it.formulario.copy(
+                    ciudad = valor,
+                    errorCiudad = null
+                )
+            )
+        }
+    }
+
     fun actualizarDireccion(valor: String) {
         _uiState.update {
             it.copy(formulario = it.formulario.copy(direccion = valor, errorDireccion = null))
@@ -158,7 +180,21 @@ class EnviarAViewModel(
             return
         }
         val formulario = _uiState.value.formulario
+        val regionTexto = formulario.region.trim()
+        val ciudadTexto = formulario.ciudad.trim()
         val direccionTexto = formulario.direccion.trim()
+        if (regionTexto.isEmpty()) {
+            _uiState.update {
+                it.copy(formulario = formulario.copy(errorRegion = "La region es obligatoria."))
+            }
+            return
+        }
+        if (ciudadTexto.isEmpty()) {
+            _uiState.update {
+                it.copy(formulario = formulario.copy(errorCiudad = "La ciudad es obligatoria."))
+            }
+            return
+        }
         if (direccionTexto.isEmpty()) {
             _uiState.update {
                 it.copy(formulario = formulario.copy(errorDireccion = "La direccion es obligatoria."))
@@ -181,11 +217,12 @@ class EnviarAViewModel(
                 return
             }
         }
+        val direccionCompuesta = "$regionTexto, $ciudadTexto, $direccionTexto"
         val direccion = Direccion(
             id = formulario.id ?: 0L,
             usuarioId = userId,
             etiqueta = etiqueta,
-            direccion = direccionTexto,
+            direccion = direccionCompuesta,
             referencia = referencia,
             latitud = formulario.latitud ?: direccionExistente?.latitud,
             longitud = formulario.longitud ?: direccionExistente?.longitud,

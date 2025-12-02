@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pokermart.ecommerce.data.model.Producto
+import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
 import com.pokermart.ecommerce.pref.SessionManager
@@ -44,13 +45,15 @@ data class HomeUiState(
     val carouselImages: List<String> = emptyList(),
     val categories: List<CategoryItem> = emptyList(),
     val searchResults: List<ProductItem> = emptyList(),
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+    val cartCount: Int = 0
 )
 
 class HomeViewModel(
     private val sessionManager: SessionManager,
     repositorioCatalogo: RepositorioCatalogo,
-    private val repositorioDirecciones: RepositorioDirecciones
+    private val repositorioDirecciones: RepositorioDirecciones,
+    private val repositorioCarrito: RepositorioCarrito
 ) : ViewModel() {
 
     private val searchQueryFlow = MutableStateFlow("")
@@ -68,6 +71,7 @@ class HomeViewModel(
         cargarEstadoInicial()
         observarDireccionPredeterminada()
         observarResultadosBusqueda(repositorioCatalogo)
+        observarCantidadCarrito()
     }
 
     private fun cargarEstadoInicial() {
@@ -95,6 +99,18 @@ class HomeViewModel(
                 uiState = uiState.copy(
                     address = direccion?.direccion ?: "Debe ingresar Direccion"
                 )
+            }
+        }
+    }
+
+    private fun observarCantidadCarrito() {
+        val usuarioId = sessionManager.obtenerSesion()?.id ?: run {
+            uiState = uiState.copy(cartCount = 0)
+            return
+        }
+        viewModelScope.launch {
+            repositorioCarrito.observarCantidadTotal(usuarioId).collectLatest { cantidad ->
+                uiState = uiState.copy(cartCount = cantidad)
             }
         }
     }

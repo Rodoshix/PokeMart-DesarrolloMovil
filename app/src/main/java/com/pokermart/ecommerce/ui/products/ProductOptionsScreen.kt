@@ -25,6 +25,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +46,7 @@ fun ProductOptionsScreen(
     viewModel: ProductOptionsViewModel,
     onVolver: () -> Unit,
     onIrPerfil: () -> Unit,
+    onIrCarrito: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsState()
@@ -83,6 +85,12 @@ fun ProductOptionsScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onIrCarrito) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = "Ir al carrito"
+                        )
+                    }
                     IconButton(onClick = viewModel::recargar) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -189,11 +197,11 @@ fun ProductOptionsScreen(
                 }
                 item {
                     Button(
-                        onClick = viewModel::comprarProducto,
+                        onClick = viewModel::agregarAlCarrito,
                         enabled = estado.opcionSeleccionadaId != null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Comprar")
+                        Text("Agregar al carrito")
                     }
                 }
             }

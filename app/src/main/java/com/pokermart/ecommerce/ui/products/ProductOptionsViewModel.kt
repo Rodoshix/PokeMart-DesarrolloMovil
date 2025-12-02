@@ -2,12 +2,13 @@ package com.pokermart.ecommerce.ui.products
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pokermart.ecommerce.data.model.OpcionProducto
+import com.pokermart.ecommerce.data.model.Producto
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
-import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
+import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.pref.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -15,7 +16,7 @@ const val ARG_PRODUCTO_ID = "productoId"
 
 class ProductOptionsViewModel(
     private val repositorioCatalogo: RepositorioCatalogo,
-    private val repositorioDirecciones: RepositorioDirecciones,
+    private val repositorioCarrito: RepositorioCarrito,
     private val sessionManager: SessionManager,
     private val productoId: Long
 ) : ViewModel() {
@@ -75,13 +76,13 @@ class ProductOptionsViewModel(
         }
     }
 
-    fun comprarProducto() {
+    fun agregarAlCarrito() {
         val productoActual = _estado.value.producto ?: return
         viewModelScope.launch {
             val opcionSeleccionadaId = _estado.value.opcionSeleccionadaId ?: run {
                 _estado.update {
                     it.copy(
-                        errorCompra = "Selecciona una opcion antes de comprar.",
+                        errorCompra = "Selecciona una opcion antes de agregar.",
                         mensajeCompra = null,
                         mostrarAccionIrPerfil = false
                     )
@@ -93,55 +94,43 @@ class ProductOptionsViewModel(
                 _estado.update {
                     it.copy(
                         mensajeCompra = null,
-                        errorCompra = "Debes iniciar sesion para comprar.",
+                        errorCompra = "Debes iniciar sesion para agregar al carrito.",
                         mostrarAccionIrPerfil = false
                     )
                 }
                 return@launch
             }
-            val direccionPredeterminada = repositorioDirecciones
-                .observarPredeterminada(sesion.id)
-                .firstOrNull()
+            val opcionSeleccionada = productoActual.opciones.firstOrNull { it.id == opcionSeleccionadaId }
+            val precioUnitario = calcularPrecioFinal(productoActual, opcionSeleccionada)
 
-            if (direccionPredeterminada == null) {
-                _estado.update {
-                    it.copy(
-                        mensajeCompra = null,
-                        errorCompra = "Necesitas registrar una direccion de envio antes de comprar.",
-                        mostrarAccionIrPerfil = true
-                    )
-                }
-                return@launch
-            }
-
-            val datosCompletos = sesion.apellido?.isNotBlank() == true &&
-                sesion.region?.isNotBlank() == true &&
-                sesion.comuna?.isNotBlank() == true &&
-                sesion.run?.isNotBlank() == true &&
-                sesion.fechaNacimiento?.isNotBlank() == true
-
-            if (!datosCompletos) {
-                _estado.update {
-                    it.copy(
-                        mensajeCompra = null,
-                        errorCompra = "Completa los datos de tu perfil antes de comprar.",
-                        mostrarAccionIrPerfil = true
-                    )
-                }
-                return@launch
-            }
-
-            _estado.update {
-                val opcionNombre = productoActual.opciones.firstOrNull { it.id == opcionSeleccionadaId }?.nombre
-                it.copy(
-                    mensajeCompra = if (opcionNombre != null) {
-                        "Compra realizada con exito. Prepararemos tu pedido de ${productoActual.nombre} ($opcionNombre)."
-                    } else {
-                        "Compra realizada con exito. Prepararemos tu pedido de ${productoActual.nombre}."
-                    },
-                    errorCompra = null,
-                    mostrarAccionIrPerfil = false
+            runCatching {
+                repositorioCarrito.agregarOIncrementar(
+                    usuarioId = sesion.id,
+                    productoId = productoActual.id,
+                    opcionId = opcionSeleccionadaId,
+                    precioUnitario = precioUnitario
                 )
+            }.onSuccess {
+                _estado.update {
+                    val opcionNombre = opcionSeleccionada?.nombre
+                    it.copy(
+                        mensajeCompra = if (opcionNombre != null) {
+                            "Agregado al carrito: ${productoActual.nombre} ($opcionNombre)."
+                        } else {
+                            "Agregado al carrito: ${productoActual.nombre}."
+                        },
+                        errorCompra = null,
+                        mostrarAccionIrPerfil = false
+                    )
+                }
+            }.onFailure { error ->
+                _estado.update {
+                    it.copy(
+                        mensajeCompra = null,
+                        errorCompra = error.message ?: "No pudimos agregar el producto al carrito.",
+                        mostrarAccionIrPerfil = false
+                    )
+                }
             }
         }
     }
@@ -161,5 +150,20 @@ class ProductOptionsViewModel(
                 mostrarAccionIrPerfil = false
             )
         }
+    }
+
+    private fun calcularPrecioFinal(
+        producto: Producto,
+        opcion: OpcionProducto?
+    ): Double {
+        val cantidad = opcion?.let { extraerCantidad(it.nombre) } ?: 1
+        val extra = opcion?.precioExtra ?: 0.0
+        return (producto.precio * cantidad) + extra
+    }
+
+    private fun extraerCantidad(nombre: String): Int? {
+        val regex = Regex("x\\s*(\\d+)", RegexOption.IGNORE_CASE)
+        val match = regex.find(nombre)
+        return match?.groupValues?.getOrNull(1)?.toIntOrNull()
     }
 }

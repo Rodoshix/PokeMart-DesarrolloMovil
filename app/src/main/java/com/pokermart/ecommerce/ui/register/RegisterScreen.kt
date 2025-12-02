@@ -75,8 +75,15 @@ fun RegisterScreen(
             CampoTextoPokeMart(
                 valor = estado.nombre,
                 enCambio = viewModel::actualizarNombre,
-                etiqueta = "Nombre completo",
+                etiqueta = "Nombre",
                 error = estado.nombreError
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            CampoTextoPokeMart(
+                valor = estado.apellido,
+                enCambio = viewModel::actualizarApellido,
+                etiqueta = "Apellido",
+                error = estado.apellidoError
             )
             Spacer(modifier = Modifier.height(16.dp))
             CampoTextoPokeMart(
