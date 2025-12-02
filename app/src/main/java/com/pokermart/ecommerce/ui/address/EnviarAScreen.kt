@@ -69,12 +69,13 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.MapView
-import com.mapbox.maps.Style
-import com.mapbox.maps.plugin.gestures.addOnMapClickListener
-import com.mapbox.maps.plugin.gestures.gestures
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 import com.pokermart.ecommerce.ui.common.EstadoVacio
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -486,7 +487,6 @@ private fun SelectorMapaDialog(
     onDismiss: () -> Unit,
     onUbicacionConfirmada: (Double, Double) -> Unit
 ) {
-    val context = LocalContext.current
     val puntoInicial = remember(latitudInicial, longitudInicial) {
         if (latitudInicial != null && longitudInicial != null) {
             crearPunto(latitudInicial, longitudInicial)
@@ -503,39 +503,9 @@ private fun SelectorMapaDialog(
             }
         )
     }
-    val mapView = remember { MapView(context) }
-    var styleListo by remember { mutableStateOf(false) }
-
-    DisposableEffect(mapView) {
-        mapView.onStart()
-        onDispose {
-            mapView.onStop()
-            mapView.onDestroy()
-        }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(puntoInicial, DEFAULT_MAP_ZOOM)
     }
-
-    LaunchedEffect(mapView) {
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
-            styleListo = true
-            mapView.getMapboxMap().setCamera(
-                CameraOptions.Builder()
-                    .center(puntoInicial)
-                    .zoom(DEFAULT_MAP_ZOOM)
-                    .build()
-            )
-        }
-        mapView.gestures.addOnMapClickListener { point ->
-            puntoSeleccionado = point
-            mapView.getMapboxMap().setCamera(
-                CameraOptions.Builder()
-                    .center(point)
-                    .zoom(DEFAULT_MAP_ZOOM)
-                    .build()
-            )
-            true
-        }
-    }
-
     Dialog(
         onDismissRequest = { if (!procesando) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -550,11 +520,11 @@ private fun SelectorMapaDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-            ) {
-                Text(
-                    text = "Selecciona un punto en el mapa",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                ) {
+                    Text(
+                        text = "Selecciona un punto en el mapa",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 Text(
                     text = "Toca el mapa para elegir tu direccion exacta.",
                     style = MaterialTheme.typography.bodySmall
@@ -564,19 +534,21 @@ private fun SelectorMapaDialog(
                         .fillMaxWidth()
                         .height(320.dp)
                 ) {
-                    AndroidView(
+                    GoogleMap(
                         modifier = Modifier.fillMaxSize(),
-                        factory = { mapView }
-                    )
-                    if (styleListo) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = "Punto seleccionado",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(32.dp)
-                        )
+                        cameraPositionState = cameraPositionState,
+                        uiSettings = MapUiSettings(zoomControlsEnabled = true),
+                        onMapClick = { point ->
+                            puntoSeleccionado = point
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(point, DEFAULT_MAP_ZOOM)
+                        }
+                    ) {
+                        puntoSeleccionado?.let {
+                            Marker(
+                                state = rememberMarkerState(position = it),
+                                title = "Seleccionado"
+                            )
+                        }
                     }
                 }
                 Row(
@@ -594,8 +566,8 @@ private fun SelectorMapaDialog(
                         onClick = {
                             puntoSeleccionado?.let { seleccion ->
                                 onUbicacionConfirmada(
-                                    seleccion.latitude(),
-                                    seleccion.longitude()
+                                    seleccion.latitude,
+                                    seleccion.longitude
                                 )
                             }
                         },
@@ -625,30 +597,9 @@ private fun MapaDireccionPreview(
     val latitud = item.latitud ?: return
     val longitud = item.longitud ?: return
     val punto = remember(latitud, longitud) { crearPunto(latitud, longitud) }
-    val context = LocalContext.current
-    val mapView = remember { MapView(context) }
-    var styleListo by remember { mutableStateOf(false) }
-
-    DisposableEffect(mapView) {
-        mapView.onStart()
-        onDispose {
-            mapView.onStop()
-            mapView.onDestroy()
-        }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(punto, DEFAULT_MAP_ZOOM)
     }
-
-    LaunchedEffect(mapView) {
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) {
-            styleListo = true
-            mapView.getMapboxMap().setCamera(
-                CameraOptions.Builder()
-                    .center(punto)
-                    .zoom(DEFAULT_MAP_ZOOM)
-                    .build()
-            )
-        }
-    }
-
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "Direccion seleccionada en el mapa",
@@ -664,18 +615,14 @@ private fun MapaDireccionPreview(
                     .fillMaxWidth()
                     .height(200.dp)
             ) {
-                AndroidView(
+                GoogleMap(
                     modifier = Modifier.matchParentSize(),
-                    factory = { mapView }
-                )
-                if (styleListo) {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = "Punto seleccionado",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(32.dp)
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+                ) {
+                    Marker(
+                        state = rememberMarkerState(position = punto),
+                        title = "Direccion"
                     )
                 }
             }
@@ -693,11 +640,11 @@ private fun MapaDireccionPreview(
     }
 }
 
-private val DEFAULT_POINT: Point = Point.fromLngLat(-70.6693, -33.4489)
-private const val DEFAULT_MAP_ZOOM = 16.0
+private val DEFAULT_POINT: LatLng = LatLng(-33.4489, -70.6693)
+private const val DEFAULT_MAP_ZOOM = 16f
 
-private fun crearPunto(latitud: Double, longitud: Double): Point =
-    Point.fromLngLat(longitud, latitud)
+private fun crearPunto(latitud: Double, longitud: Double): LatLng =
+    LatLng(latitud, longitud)
 
 @Composable
 private fun ConfirmarEliminarDialog(

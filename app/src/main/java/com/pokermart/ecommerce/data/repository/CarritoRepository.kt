@@ -14,6 +14,7 @@ class RepositorioCarrito(
     // Las referencias a otros repositorios se agregaran cuando necesitemos enriquecer datos.
 ) {
 
+    @Suppress("unused")
     fun observarCarrito(usuarioId: Long): Flow<List<CarritoItem>> =
         carritoDao.observarPorUsuario(usuarioId).map { entidades ->
             entidades.map { it.aModelo() }
@@ -58,6 +59,7 @@ class RepositorioCarrito(
         carritoDao.limpiarPorUsuario(usuarioId)
     }
 
+    @Suppress("unused")
     suspend fun contarItems(usuarioId: Long): Int = withContext(Dispatchers.IO) {
         carritoDao.contarPorUsuario(usuarioId)
     }

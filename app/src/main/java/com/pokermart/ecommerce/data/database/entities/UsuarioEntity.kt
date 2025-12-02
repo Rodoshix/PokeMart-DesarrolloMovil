@@ -32,6 +32,7 @@ fun UsuarioEntity.aModelo() = Usuario(
     fotoLocal = fotoLocal
 )
 
+@Suppress("unused")
 fun Usuario.aEntity(contrasena: String) = UsuarioEntity(
     id = id,
     nombre = nombre,

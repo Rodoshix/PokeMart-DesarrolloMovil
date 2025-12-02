@@ -1,7 +1,6 @@
 package com.pokermart.ecommerce.ui.common
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,11 +24,9 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -39,19 +36,18 @@ import coil.compose.AsyncImage
 import com.pokermart.ecommerce.data.model.Categoria
 import com.pokermart.ecommerce.data.model.OpcionProducto
 import com.pokermart.ecommerce.data.model.Producto
+import java.util.Locale
 
 @Composable
 fun CampoTextoPokeMart(
+    modifier: Modifier = Modifier,
     valor: String,
     enCambio: (String) -> Unit,
     etiqueta: String,
     error: String?,
-    esContrasena: Boolean = false,
-    modifier: Modifier = Modifier
+    esContrasena: Boolean = false
 ) {
-    val transformation = remember(esContrasena) {
-        if (esContrasena) PasswordVisualTransformation() else VisualTransformation.None
-    }
+    val transformation = if (esContrasena) PasswordVisualTransformation() else VisualTransformation.None
     OutlinedTextField(
         value = valor,
         onValueChange = enCambio,
@@ -69,10 +65,10 @@ fun CampoTextoPokeMart(
 
 @Composable
 fun BotonPrincipalPokeMart(
+    modifier: Modifier = Modifier,
     texto: String,
     habilitado: Boolean,
-    enClick: () -> Unit,
-    modifier: Modifier = Modifier
+    enClick: () -> Unit
 ) {
     Button(
         onClick = enClick,
@@ -85,10 +81,10 @@ fun BotonPrincipalPokeMart(
 
 @Composable
 fun EstadoVacio(
+    modifier: Modifier = Modifier,
     mensaje: String,
     accionTexto: String? = null,
-    enAccionClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    enAccionClick: (() -> Unit)? = null
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -124,10 +120,11 @@ fun EstadoVacio(
 }
 
 @Composable
+@Suppress("unused")
 fun TarjetaCategoria(
+    modifier: Modifier = Modifier,
     categoria: Categoria,
-    enClick: (Categoria) -> Unit,
-    modifier: Modifier = Modifier
+    enClick: (Categoria) -> Unit
 ) {
     Card(
         onClick = { enClick(categoria) },
@@ -169,9 +166,9 @@ fun TarjetaCategoria(
 
 @Composable
 fun TarjetaProducto(
+    modifier: Modifier = Modifier,
     producto: Producto,
-    enClick: (Producto) -> Unit,
-    modifier: Modifier = Modifier
+    enClick: (Producto) -> Unit
 ) {
     Card(
         onClick = { enClick(producto) },
@@ -202,7 +199,7 @@ fun TarjetaProducto(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = "$${String.format("%.2f", producto.precio)}",
+                        text = "$" + String.format(Locale("es", "CL"), "%.2f", producto.precio),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -221,11 +218,11 @@ fun TarjetaProducto(
 
 @Composable
 fun TarjetaOpcionProducto(
+    modifier: Modifier = Modifier,
     opcion: OpcionProducto,
     precioBase: Double,
     seleccionado: Boolean,
-    onSeleccionar: () -> Unit,
-    modifier: Modifier = Modifier
+    onSeleccionar: () -> Unit
 ) {
     Card(
         onClick = onSeleccionar,
@@ -262,10 +259,10 @@ fun TarjetaOpcionProducto(
                 } else {
                     precioBase + opcion.precioExtra
                 }
-                val totalTexto = "$" + String.format("%.2f", precioFinal)
+                val totalTexto = "$" + String.format(Locale("es", "CL"), "%.2f", precioFinal)
                 val precioPorUnidadTexto = cantidad
                     ?.takeIf { it > 0 }
-                    ?.let { count -> "$" + String.format("%.2f", precioFinal / count) }
+                    ?.let { count -> "$" + String.format(Locale("es", "CL"), "%.2f", precioFinal / count) }
                 Text(
                     text = precioPorUnidadTexto?.let { "$totalTexto ($it c/u)" } ?: totalTexto,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
@@ -288,8 +285,8 @@ private fun OpcionProducto.extraerCantidad(): Int? {
 
 @Composable
 private fun DestacadoChip(
-    texto: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    texto: String
 ) {
     Text(
         text = texto,

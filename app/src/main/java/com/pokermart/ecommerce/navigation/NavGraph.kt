@@ -40,6 +40,7 @@ sealed class Destino(val ruta: String) {
     data object Registro : Destino("registro")
     data object EnviarA : Destino("enviarA")
     data object Carrito : Destino("carrito")
+    data object Checkout : Destino("checkout")
     data object Productos : Destino("productos/{$ARG_CATEGORIA_ID}/{$ARG_CATEGORIA_NOMBRE}") {
         fun crearRuta(categoriaId: Long, categoriaNombre: String): String =
             "productos/$categoriaId/${Uri.encode(categoriaNombre)}"
@@ -182,6 +183,30 @@ fun NavGraph(
                     navController.navigate(Destino.EnviarA.ruta) {
                         launchSingleTop = true
                     }
+                },
+                onIrCheckout = {
+                    navController.navigate(Destino.Checkout.ruta) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable(route = Destino.Checkout.ruta) {
+            val checkoutViewModel = viewModel<com.pokermart.ecommerce.ui.checkout.CheckoutViewModel>(
+                factory = DI.checkoutViewModelFactory()
+            )
+            com.pokermart.ecommerce.ui.checkout.CheckoutScreen(
+                viewModel = checkoutViewModel,
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.navigate(Destino.Home.ruta) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                },
+                onManageAddresses = {
+                    navController.navigate(Destino.EnviarA.ruta)
                 }
             )
         }

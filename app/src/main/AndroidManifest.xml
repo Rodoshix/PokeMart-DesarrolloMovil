@@ -40,8 +40,8 @@
         </activity>
 
         <meta-data
-            android:name="MAPBOX_ACCESS_TOKEN"
-            android:value="@string/mapbox_access_token" />
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
     </application>
 
 </manifest>

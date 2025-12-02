@@ -8,12 +8,15 @@ import com.pokermart.ecommerce.data.dao.CategoriaDao
 import com.pokermart.ecommerce.data.dao.CarritoDao
 import com.pokermart.ecommerce.data.dao.DireccionDao
 import com.pokermart.ecommerce.data.dao.OpcionProductoDao
+import com.pokermart.ecommerce.data.dao.PedidoDao
 import com.pokermart.ecommerce.data.dao.ProductoDao
 import com.pokermart.ecommerce.data.dao.UsuarioDao
 import com.pokermart.ecommerce.data.database.entities.CarritoItemEntity
 import com.pokermart.ecommerce.data.database.entities.CategoriaEntity
 import com.pokermart.ecommerce.data.database.entities.DireccionEntity
 import com.pokermart.ecommerce.data.database.entities.OpcionProductoEntity
+import com.pokermart.ecommerce.data.database.entities.PedidoEntity
+import com.pokermart.ecommerce.data.database.entities.PedidoItemEntity
 import com.pokermart.ecommerce.data.database.entities.ProductoEntity
 import com.pokermart.ecommerce.data.database.entities.UsuarioEntity
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +29,11 @@ import kotlinx.coroutines.launch
         OpcionProductoEntity::class,
         UsuarioEntity::class,
         DireccionEntity::class,
-        CarritoItemEntity::class
+        CarritoItemEntity::class,
+        PedidoEntity::class,
+        PedidoItemEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class PokeMartDatabase : RoomDatabase() {
@@ -39,6 +44,7 @@ abstract class PokeMartDatabase : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
     abstract fun direccionDao(): DireccionDao
     abstract fun carritoDao(): CarritoDao
+    abstract fun pedidoDao(): PedidoDao
 
     companion object {
         private const val NOMBRE_BD = "poke_mart.db"
