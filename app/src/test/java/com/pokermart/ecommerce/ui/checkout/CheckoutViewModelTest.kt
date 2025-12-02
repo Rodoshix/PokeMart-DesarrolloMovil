@@ -5,14 +5,18 @@ import com.pokermart.ecommerce.MainDispatcherRule
 import com.pokermart.ecommerce.data.dao.CarritoDao
 import com.pokermart.ecommerce.data.dao.CategoriaDao
 import com.pokermart.ecommerce.data.dao.DireccionDao
+import com.pokermart.ecommerce.data.dao.PedidoDao
 import com.pokermart.ecommerce.data.dao.ProductoDao
 import com.pokermart.ecommerce.data.database.entities.CarritoItemEntity
 import com.pokermart.ecommerce.data.database.entities.CategoriaEntity
 import com.pokermart.ecommerce.data.database.entities.DireccionEntity
 import com.pokermart.ecommerce.data.database.entities.OpcionProductoEntity
+import com.pokermart.ecommerce.data.database.entities.PedidoEntity
+import com.pokermart.ecommerce.data.database.entities.PedidoItemEntity
 import com.pokermart.ecommerce.data.database.entities.ProductoEntity
 import com.pokermart.ecommerce.data.database.entities.aEntidad
 import com.pokermart.ecommerce.data.database.entities.relaciones.ProductoConOpciones
+import com.pokermart.ecommerce.data.database.entities.relaciones.PedidoConItems
 import com.pokermart.ecommerce.data.model.CarritoItem
 import com.pokermart.ecommerce.data.model.Direccion
 import com.pokermart.ecommerce.data.model.OpcionProducto
@@ -20,6 +24,7 @@ import com.pokermart.ecommerce.data.model.Usuario
 import com.pokermart.ecommerce.data.repository.RepositorioCarrito
 import com.pokermart.ecommerce.data.repository.RepositorioCatalogo
 import com.pokermart.ecommerce.data.repository.RepositorioDirecciones
+import com.pokermart.ecommerce.data.repository.RepositorioPedidos
 import com.pokermart.ecommerce.pref.SessionManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,11 +47,13 @@ class CheckoutViewModelTest {
         val repoDirecciones = fakeDireccionesRepo(direcciones)
         val repoCarrito = fakeCarritoRepo(carrito)
         val repoCatalogo = fakeCatalogoRepo()
+        val repoPedidos = fakePedidosRepo()
         val session = mockSession()
         return CheckoutViewModel(
             repositorioCarrito = repoCarrito,
             repositorioCatalogo = repoCatalogo,
             repositorioDirecciones = repoDirecciones,
+            repositorioPedidos = repoPedidos,
             sessionManager = session
         )
     }
@@ -97,6 +104,10 @@ class CheckoutViewModelTest {
     private fun fakeCatalogoRepo() = RepositorioCatalogo(
         categoriaDao = FakeCategoriaDao(),
         productoDao = FakeProductoDao()
+    )
+
+    private fun fakePedidosRepo() = RepositorioPedidos(
+        pedidoDao = FakePedidoDao()
     )
 }
 
@@ -164,6 +175,43 @@ private class FakeProductoDao : ProductoDao {
     }
     override suspend fun contar(): Int = 0
     override suspend fun insertarTodos(productos: List<ProductoEntity>) {}
+}
+
+private class FakePedidoDao : PedidoDao {
+    private val pedidos = mutableListOf<PedidoEntity>()
+    private val items = mutableListOf<PedidoItemEntity>()
+    private val flow = MutableStateFlow<List<PedidoConItems>>(emptyList())
+
+    override suspend fun insertarPedido(pedido: PedidoEntity): Long {
+        val nuevoId = (pedidos.maxOfOrNull { it.id } ?: 0L) + 1L
+        val conId = if (pedido.id == 0L) pedido.copy(id = nuevoId) else pedido
+        pedidos.add(conId)
+        actualizarFlow()
+        return conId.id
+    }
+
+    override suspend fun insertarItems(items: List<PedidoItemEntity>) {
+        val startId = (this.items.maxOfOrNull { it.id } ?: 0L) + 1L
+        val normalizados = items.mapIndexed { index, item ->
+            val id = if (item.id == 0L) startId + index else item.id
+            item.copy(id = id)
+        }
+        this.items.addAll(normalizados)
+        actualizarFlow()
+    }
+
+    override fun observarPedidos(usuarioId: Long): Flow<List<PedidoConItems>> =
+        flow.map { lista -> lista.filter { it.pedido.usuarioId == usuarioId } }
+
+    override suspend fun obtenerDetalle(pedidoId: Long): PedidoConItems? =
+        flow.value.firstOrNull { it.pedido.id == pedidoId }
+
+    private fun actualizarFlow() {
+        flow.value = pedidos.map { pedido ->
+            val itemsPedido = items.filter { it.pedidoId == pedido.id }
+            PedidoConItems(pedido, itemsPedido)
+        }
+    }
 }
 
 private fun OpcionProducto.aEntidad() = OpcionProductoEntity(
